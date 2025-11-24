@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "Agent Alpha",
+    "traits": {
+      "strength": 5,
+      "intelligence": 7,
+      "speed": 6,
+      "rarity": "common"
+    }
+  }
+]
