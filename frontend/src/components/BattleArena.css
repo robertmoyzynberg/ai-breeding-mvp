@@ -55,6 +55,8 @@
   min-width: 280px;
   max-width: 400px;
   transition: transform 0.3s ease;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .fighter.hit {
@@ -75,6 +77,9 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   text-align: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .fighter-avatar {
@@ -101,6 +106,11 @@
   font-size: 24px;
   font-weight: bold;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  line-height: 1.2;
 }
 
 .stat-bar-container {
@@ -241,11 +251,14 @@
 .summary-card {
   flex: 1;
   min-width: 250px;
+  max-width: 100%;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   border-radius: 15px;
   padding: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .winner-card {
@@ -260,6 +273,12 @@
 .summary-card h3 {
   margin: 0 0 15px 0;
   font-size: 20px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  line-height: 1.3;
+  overflow: hidden;
 }
 
 .summary-stats {

@@ -1,0 +1,92 @@
+.my-agents-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: var(--background-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+  color: var(--text-color-light, #fff);
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: var(--text-color-light, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.page-title {
+  font-size: 48px;
+  font-weight: 800;
+  margin: 20px 0 10px 0;
+  color: var(--text-color-light, #fff);
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-subtitle {
+  font-size: 18px;
+  color: var(--text-color-secondary, rgba(255, 255, 255, 0.8));
+  margin: 10px 0;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.view-button {
+  flex: 1;
+}
+
+.delete-button {
+  flex: 1;
+  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%) !important;
+  box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3) !important;
+}
+
+.delete-button:hover {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+  box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4) !important;
+}
+
+@media (max-width: 768px) {
+  .my-agents-page {
+    padding: 20px 15px;
+  }
+
+  .page-title {
+    font-size: 36px;
+  }
+
+  .back-button {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .footer-buttons {
+    flex-direction: column;
+  }
+}
+

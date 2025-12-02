@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import './index.css';
+import './styles/global.css';
+import './styles/cards.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

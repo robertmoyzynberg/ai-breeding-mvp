@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { getBalance } from "../api/backend";
+import { verifyPaymentSuccess } from "../api/backend";
 import "./PaymentSuccess.css";
 
 function PaymentSuccess() {
@@ -9,11 +9,22 @@ function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const { refreshBalance, showNotification } = useApp();
   const [loading, setLoading] = useState(true);
+  const [coinsAdded, setCoinsAdded] = useState(0);
   const username = localStorage.getItem("username") || "user";
 
   useEffect(() => {
     async function handleSuccess() {
       try {
+        const sessionId = searchParams.get("session_id");
+        
+        if (sessionId) {
+          // Verify payment with backend
+          const result = await verifyPaymentSuccess(sessionId);
+          if (result.coins) {
+            setCoinsAdded(result.coins);
+          }
+        }
+        
         // Fetch new balance from backend
         await refreshBalance();
         
@@ -28,13 +39,16 @@ function PaymentSuccess() {
         }, 3000);
       } catch (error) {
         console.error("[PaymentSuccess] Error:", error);
+        if (showNotification) {
+          showNotification("Payment verification failed. Please check your balance.", "error");
+        }
       } finally {
         setLoading(false);
       }
     }
 
     handleSuccess();
-  }, [navigate, refreshBalance, showNotification]);
+  }, [navigate, refreshBalance, showNotification, searchParams]);
 
   const handleGoToDashboard = () => {
     navigate("/dashboard");
@@ -52,6 +66,11 @@ function PaymentSuccess() {
         <p className="success-message">
           Your payment has been processed successfully. Coins have been added to your account.
         </p>
+        {coinsAdded > 0 && (
+          <p className="coins-added">
+            +{coinsAdded} coins added to your account!
+          </p>
+        )}
         
         {loading ? (
           <div className="loading-message">Updating your balance...</div>

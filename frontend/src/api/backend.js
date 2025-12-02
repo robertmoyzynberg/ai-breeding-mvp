@@ -181,7 +181,28 @@ export async function checkHealth() {
 // ============================================
 
 /**
- * Create a payment intent
+ * Create a Stripe checkout session
+ * @param {Object} paymentData - Payment data {userId, amount, currency}
+ * @returns {Promise<Object>} Checkout session object with url and sessionId
+ */
+export async function createCheckoutSession(paymentData) {
+  return apiRequest("/api/payment/create-checkout-session", {
+    method: "POST",
+    body: paymentData,
+  });
+}
+
+/**
+ * Verify payment success
+ * @param {string} sessionId - Stripe session ID
+ * @returns {Promise<Object>} Payment verification result
+ */
+export async function verifyPaymentSuccess(sessionId) {
+  return apiRequest(`/api/payment/success?session_id=${sessionId}`);
+}
+
+/**
+ * Create a payment intent (legacy, kept for backward compatibility)
  * @param {Object} paymentData - Payment data (userId, amount, currency, paymentMethod)
  * @returns {Promise<Object>} Payment intent object
  */

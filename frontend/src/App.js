@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route } from "react-router-dom";
 import { mintAgentOnChain } from "./blockchain/nft";
 import { connectWallet } from "./blockchain/wallet";
-import OffspringList from "./components/OffspringList";
 import AgentSelector from "./components/AgentSelector";
 import BattleArena from "./components/BattleArena";
 import Navigation from "./components/Navigation";
@@ -19,7 +18,10 @@ import AgentProfile from "./pages/AgentProfile";
 import Store from "./pages/Store";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
+import Battle from "./pages/Battle";
 import { useApp } from "./context/AppContext";
+import { formatAgentName } from "./utils/nameUtils";
+import "./App.css";
 import {
   getAgents as apiGetAgents,
   createAgent as apiCreateAgent,
@@ -882,7 +884,22 @@ function App() {
           selectedParent1.id,
           selectedParent2.id
         );
-        setLastBattle(data);
+        // Format battle result for BattleArena component
+        setLastBattle({
+          ...data,
+          agentA:
+            data.agentA || data.winner?.id === selectedParent1.id
+              ? data.winner
+              : data.loser,
+          agentB:
+            data.agentB || data.winner?.id === selectedParent2.id
+              ? data.winner
+              : data.loser,
+          xpGainA: data.winner?.id === selectedParent1.id ? 10 : 2,
+          xpGainB: data.winner?.id === selectedParent2.id ? 10 : 2,
+          energyA: data.agentA?.energy || data.winner?.energy || 0,
+          energyB: data.agentB?.energy || data.loser?.energy || 0,
+        });
 
         // Award coins from battle
         if (data.coinRewards) {
@@ -1036,147 +1053,224 @@ function App() {
   const username = localStorage.getItem("username");
 
   return (
-    <>
+    <div className="app-container">
       {username && <Navigation />}
-      <Routes>
-        <Route path="/" element={<CreateAccount />} />
-        <Route path="/create-account" element={<CreateAccount />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/create-agent" element={<CreateAgent />} />
-        <Route path="/agents" element={<MyAgents />} />
-        <Route path="/breed/select" element={<SelectParentA />} />
-        <Route path="/breed/parentB/:parentAId" element={<SelectParentB />} />
-        <Route
-          path="/breed/run/:parentAId/:parentBId"
-          element={<BreedingResult />}
-        />
-        <Route path="/mint" element={<MintAgent />} />
-        <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/store" element={<Store />} />
-        <Route path="/agent/:id" element={<AgentProfile />} />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/cancel" element={<PaymentCancel />} />
-        <Route
-          path="*"
-          element={
-            <div
-              style={{
-                minHeight: "100vh",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                padding: "20px",
-                fontFamily:
-                  "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-              }}
-            >
-              <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-                {/* Header */}
-                <div
-                  style={{
-                    textAlign: "center",
-                    marginBottom: "40px",
-                    padding: "30px",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    backdropFilter: "blur(10px)",
-                    borderRadius: "20px",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <h1
-                    style={{
-                      fontSize: "48px",
-                      fontWeight: "800",
-                      color: "#fff",
-                      margin: "0 0 10px 0",
-                      textShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
-                    }}
-                  >
-                    🧬 AI Breeding MVP
-                  </h1>
+      <main className="app-main">
+        <Routes>
+          <Route path="/" element={<CreateAccount />} />
+          <Route path="/create-account" element={<CreateAccount />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/create-agent" element={<CreateAgent />} />
+          <Route path="/agents" element={<MyAgents />} />
+          <Route path="/breed/select" element={<SelectParentA />} />
+          <Route path="/breed/parentB/:parentAId" element={<SelectParentB />} />
+          <Route
+            path="/breed/run/:parentAId/:parentBId"
+            element={<BreedingResult />}
+          />
+          <Route path="/mint" element={<MintAgent />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/store" element={<Store />} />
+          <Route path="/agent/:id" element={<AgentProfile />} />
+          <Route path="/battle" element={<Battle />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
+          <Route
+            path="*"
+            element={
+              <div
+                style={{
+                  minHeight: "100vh",
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  padding: "20px",
+                  fontFamily:
+                    "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                }}
+              >
+                <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                  {/* Header */}
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      gap: "20px",
-                      flexWrap: "wrap",
+                      textAlign: "center",
+                      marginBottom: "40px",
+                      padding: "30px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      backdropFilter: "blur(10px)",
+                      borderRadius: "20px",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
                     }}
                   >
+                    <h1
+                      style={{
+                        fontSize: "48px",
+                        fontWeight: "800",
+                        color: "#fff",
+                        margin: "0 0 10px 0",
+                        textShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
+                      }}
+                    >
+                      🧬 AI Breeding MVP
+                    </h1>
                     <div
                       style={{
-                        display: "inline-flex",
+                        display: "flex",
+                        justifyContent: "center",
                         alignItems: "center",
-                        gap: "10px",
-                        padding: "12px 24px",
-                        background: "rgba(255, 255, 255, 0.2)",
-                        borderRadius: "50px",
-                        fontSize: "24px",
-                        fontWeight: "bold",
-                        color: "#fff",
-                        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+                        gap: "20px",
+                        flexWrap: "wrap",
                       }}
                     >
-                      💰 {coins} Coins
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "12px 24px",
+                          background: "rgba(255, 255, 255, 0.2)",
+                          borderRadius: "50px",
+                          fontSize: "24px",
+                          fontWeight: "bold",
+                          color: "#fff",
+                          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
+                        💰 {coins} Coins
+                      </div>
+                      <button
+                        onClick={() => purchaseCoins(50)}
+                        style={{
+                          padding: "10px 20px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#fff",
+                          background:
+                            "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                          border: "none",
+                          borderRadius: "25px",
+                          cursor: "pointer",
+                          boxShadow: "0 4px 15px rgba(246, 211, 101, 0.4)",
+                          transition: "all 0.3s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 6px 20px rgba(246, 211, 101, 0.5)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow =
+                            "0 4px 15px rgba(246, 211, 101, 0.4)";
+                        }}
+                      >
+                        💳 Buy Coins
+                      </button>
+                      <div>
+                        {wallet ? (
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "12px 24px",
+                              background: "rgba(76, 175, 80, 0.3)",
+                              borderRadius: "50px",
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#fff",
+                              boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+                            }}
+                          >
+                            ✅ Wallet Connected: {wallet.address.slice(0, 6)}...
+                            {wallet.address.slice(-4)}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleConnectWallet}
+                            style={{
+                              padding: "12px 24px",
+                              fontSize: "16px",
+                              fontWeight: "700",
+                              color: "#fff",
+                              background:
+                                "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                              border: "none",
+                              borderRadius: "50px",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 15px rgba(79, 172, 254, 0.4)",
+                              transition: "all 0.3s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 20px rgba(79, 172, 254, 0.5)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow =
+                                "0 4px 15px rgba(79, 172, 254, 0.4)";
+                            }}
+                          >
+                            🔗 Connect Wallet
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => purchaseCoins(50)}
+                  </div>
+
+                  {/* Shop Section */}
+                  <div style={{ marginBottom: "40px" }}>
+                    <h2
                       style={{
-                        padding: "10px 20px",
-                        fontSize: "14px",
-                        fontWeight: "600",
                         color: "#fff",
-                        background:
-                          "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                        border: "none",
-                        borderRadius: "25px",
-                        cursor: "pointer",
-                        boxShadow: "0 4px 15px rgba(246, 211, 101, 0.4)",
-                        transition: "all 0.3s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 20px rgba(246, 211, 101, 0.5)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 15px rgba(246, 211, 101, 0.4)";
+                        fontSize: "28px",
+                        fontWeight: "700",
+                        marginBottom: "20px",
+                        textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
                       }}
                     >
-                      💳 Buy Coins
-                    </button>
-                    <div>
-                      {wallet ? (
-                        <div
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            padding: "12px 24px",
-                            background: "rgba(76, 175, 80, 0.3)",
-                            borderRadius: "50px",
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#fff",
-                            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
-                          }}
-                        >
-                          ✅ Wallet Connected: {wallet.address.slice(0, 6)}...
-                          {wallet.address.slice(-4)}
-                        </div>
-                      ) : (
+                      🛒 Shop
+                    </h2>
+                    <div
+                      style={{
+                        background: "rgba(255, 255, 255, 0.95)",
+                        borderRadius: "16px",
+                        padding: "30px",
+                        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: "20px",
+                          fontWeight: "700",
+                          color: "#333",
+                          marginBottom: "20px",
+                        }}
+                      >
+                        💰 Purchase Coins
+                      </h3>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(200px, 1fr))",
+                          gap: "15px",
+                          marginBottom: "30px",
+                        }}
+                      >
                         <button
-                          onClick={handleConnectWallet}
+                          onClick={() => purchaseCoins(50)}
                           style={{
-                            padding: "12px 24px",
-                            fontSize: "16px",
-                            fontWeight: "700",
-                            color: "#fff",
+                            padding: "20px",
                             background:
                               "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
                             border: "none",
-                            borderRadius: "50px",
+                            borderRadius: "12px",
+                            color: "#fff",
+                            fontSize: "16px",
+                            fontWeight: "700",
                             cursor: "pointer",
                             boxShadow: "0 4px 15px rgba(79, 172, 254, 0.4)",
                             transition: "all 0.3s ease",
@@ -1193,420 +1287,671 @@ function App() {
                               "0 4px 15px rgba(79, 172, 254, 0.4)";
                           }}
                         >
-                          🔗 Connect Wallet
+                          <div
+                            style={{ fontSize: "24px", marginBottom: "5px" }}
+                          >
+                            💰
+                          </div>
+                          <div>50 Coins</div>
+                          <div style={{ fontSize: "12px", opacity: 0.9 }}>
+                            $0.99
+                          </div>
                         </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Shop Section */}
-                <div style={{ marginBottom: "40px" }}>
-                  <h2
-                    style={{
-                      color: "#fff",
-                      fontSize: "28px",
-                      fontWeight: "700",
-                      marginBottom: "20px",
-                      textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                    }}
-                  >
-                    🛒 Shop
-                  </h2>
-                  <div
-                    style={{
-                      background: "rgba(255, 255, 255, 0.95)",
-                      borderRadius: "16px",
-                      padding: "30px",
-                      boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: "20px",
-                        fontWeight: "700",
-                        color: "#333",
-                        marginBottom: "20px",
-                      }}
-                    >
-                      💰 Purchase Coins
-                    </h3>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(200px, 1fr))",
-                        gap: "15px",
-                        marginBottom: "30px",
-                      }}
-                    >
-                      <button
-                        onClick={() => purchaseCoins(50)}
-                        style={{
-                          padding: "20px",
-                          background:
-                            "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                          border: "none",
-                          borderRadius: "12px",
-                          color: "#fff",
-                          fontSize: "16px",
-                          fontWeight: "700",
-                          cursor: "pointer",
-                          boxShadow: "0 4px 15px rgba(79, 172, 254, 0.4)",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(79, 172, 254, 0.5)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow =
-                            "0 4px 15px rgba(79, 172, 254, 0.4)";
-                        }}
-                      >
-                        <div style={{ fontSize: "24px", marginBottom: "5px" }}>
-                          💰
-                        </div>
-                        <div>50 Coins</div>
-                        <div style={{ fontSize: "12px", opacity: 0.9 }}>
-                          $0.99
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => purchaseCoins(100)}
-                        style={{
-                          padding: "20px",
-                          background:
-                            "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                          border: "none",
-                          borderRadius: "12px",
-                          color: "#fff",
-                          fontSize: "16px",
-                          fontWeight: "700",
-                          cursor: "pointer",
-                          boxShadow: "0 4px 15px rgba(245, 87, 108, 0.4)",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(245, 87, 108, 0.5)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow =
-                            "0 4px 15px rgba(245, 87, 108, 0.4)";
-                        }}
-                      >
-                        <div style={{ fontSize: "24px", marginBottom: "5px" }}>
-                          💰
-                        </div>
-                        <div>100 Coins</div>
-                        <div style={{ fontSize: "12px", opacity: 0.9 }}>
-                          $1.99
-                        </div>
-                        <div
+                        <button
+                          onClick={() => purchaseCoins(100)}
                           style={{
-                            fontSize: "10px",
-                            marginTop: "5px",
-                            background: "rgba(255,255,255,0.2)",
-                            padding: "2px 6px",
-                            borderRadius: "8px",
+                            padding: "20px",
+                            background:
+                              "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                            border: "none",
+                            borderRadius: "12px",
+                            color: "#fff",
+                            fontSize: "16px",
+                            fontWeight: "700",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 15px rgba(245, 87, 108, 0.4)",
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(245, 87, 108, 0.5)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow =
+                              "0 4px 15px rgba(245, 87, 108, 0.4)";
                           }}
                         >
-                          BEST VALUE
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => purchaseCoins(250)}
-                        style={{
-                          padding: "20px",
-                          background:
-                            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          border: "none",
-                          borderRadius: "12px",
-                          color: "#fff",
-                          fontSize: "16px",
-                          fontWeight: "700",
-                          cursor: "pointer",
-                          boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
-                          transition: "all 0.3s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(102, 126, 234, 0.5)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow =
-                            "0 4px 15px rgba(102, 126, 234, 0.4)";
-                        }}
-                      >
-                        <div style={{ fontSize: "24px", marginBottom: "5px" }}>
-                          💰
-                        </div>
-                        <div>250 Coins</div>
-                        <div style={{ fontSize: "12px", opacity: 0.9 }}>
-                          $4.99
-                        </div>
-                        <div
+                          <div
+                            style={{ fontSize: "24px", marginBottom: "5px" }}
+                          >
+                            💰
+                          </div>
+                          <div>100 Coins</div>
+                          <div style={{ fontSize: "12px", opacity: 0.9 }}>
+                            $1.99
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "10px",
+                              marginTop: "5px",
+                              background: "rgba(255,255,255,0.2)",
+                              padding: "2px 6px",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            BEST VALUE
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => purchaseCoins(250)}
                           style={{
-                            fontSize: "10px",
-                            marginTop: "5px",
-                            background: "rgba(255,255,255,0.2)",
-                            padding: "2px 6px",
-                            borderRadius: "8px",
+                            padding: "20px",
+                            background:
+                              "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            border: "none",
+                            borderRadius: "12px",
+                            color: "#fff",
+                            fontSize: "16px",
+                            fontWeight: "700",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+                            transition: "all 0.3s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(102, 126, 234, 0.5)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow =
+                              "0 4px 15px rgba(102, 126, 234, 0.4)";
                           }}
                         >
-                          PREMIUM
-                        </div>
-                      </button>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "rgba(0, 0, 0, 0.05)",
-                        borderRadius: "12px",
-                        fontSize: "12px",
-                        color: "#666",
-                        textAlign: "center",
-                      }}
-                    >
-                      💡 Note: Payment processing is simulated. In production,
-                      integrate Stripe, Coinbase Pay, or MetaMask for real
-                      transactions.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Battle Section */}
-                <div style={{ marginBottom: "40px", textAlign: "center" }}>
-                  <h2
-                    style={{
-                      color: "#fff",
-                      fontSize: "28px",
-                      fontWeight: "700",
-                      marginBottom: "20px",
-                      textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                    }}
-                  >
-                    ⚔️ Battle Arena
-                  </h2>
-                  <button
-                    onClick={handleRandomBattle}
-                    disabled={allAgents.length < 2}
-                    style={{
-                      padding: "16px 40px",
-                      fontSize: "18px",
-                      fontWeight: "700",
-                      color: "#fff",
-                      background:
-                        allAgents.length < 2
-                          ? "rgba(255, 255, 255, 0.3)"
-                          : "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
-                      border: "none",
-                      borderRadius: "50px",
-                      cursor: allAgents.length < 2 ? "not-allowed" : "pointer",
-                      boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
-                      transition: "all 0.3s ease",
-                      textTransform: "uppercase",
-                      letterSpacing: "1px",
-                      opacity: allAgents.length < 2 ? 0.6 : 1,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (allAgents.length >= 2) {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 8px 25px rgba(245, 87, 108, 0.5)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (allAgents.length >= 2) {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 20px rgba(245, 87, 108, 0.4)";
-                      }
-                    }}
-                  >
-                    ⚔️ Battle Random Agents
-                  </button>
-
-                  {lastBattle && (
-                    <div
-                      style={{
-                        marginTop: "30px",
-                        padding: "30px",
-                        background: "rgba(255, 255, 255, 0.95)",
-                        borderRadius: "16px",
-                        boxShadow: "0 8px 25px rgba(0, 0, 0, 0.2)",
-                        maxWidth: "600px",
-                        margin: "30px auto 0",
-                      }}
-                    >
-                      <h3
+                          <div
+                            style={{ fontSize: "24px", marginBottom: "5px" }}
+                          >
+                            💰
+                          </div>
+                          <div>250 Coins</div>
+                          <div style={{ fontSize: "12px", opacity: 0.9 }}>
+                            $4.99
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "10px",
+                              marginTop: "5px",
+                              background: "rgba(255,255,255,0.2)",
+                              padding: "2px 6px",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            PREMIUM
+                          </div>
+                        </button>
+                      </div>
+                      <div
                         style={{
-                          fontSize: "24px",
-                          fontWeight: "800",
-                          color: "#333",
-                          marginBottom: "20px",
+                          padding: "15px",
+                          background: "rgba(0, 0, 0, 0.05)",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                          color: "#666",
                           textAlign: "center",
                         }}
                       >
-                        🏆 Battle Result
-                      </h3>
+                        💡 Note: Payment processing is simulated. In production,
+                        integrate Stripe, Coinbase Pay, or MetaMask for real
+                        transactions.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Battle Section */}
+                  <div style={{ marginBottom: "40px", textAlign: "center" }}>
+                    <h2
+                      style={{
+                        color: "#fff",
+                        fontSize: "28px",
+                        fontWeight: "700",
+                        marginBottom: "20px",
+                        textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+                      }}
+                    >
+                      ⚔️ Battle Arena
+                    </h2>
+                    <button
+                      onClick={handleRandomBattle}
+                      disabled={allAgents.length < 2}
+                      style={{
+                        padding: "16px 40px",
+                        fontSize: "18px",
+                        fontWeight: "700",
+                        color: "#fff",
+                        background:
+                          allAgents.length < 2
+                            ? "rgba(255, 255, 255, 0.3)"
+                            : "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
+                        border: "none",
+                        borderRadius: "50px",
+                        cursor:
+                          allAgents.length < 2 ? "not-allowed" : "pointer",
+                        boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
+                        transition: "all 0.3s ease",
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        opacity: allAgents.length < 2 ? 0.6 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (allAgents.length >= 2) {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 8px 25px rgba(245, 87, 108, 0.5)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (allAgents.length >= 2) {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow =
+                            "0 6px 20px rgba(245, 87, 108, 0.4)";
+                        }
+                      }}
+                    >
+                      ⚔️ Battle Random Agents
+                    </button>
+                  </div>
+
+                  {/* GENE Leaderboard Section */}
+                  {geneLeaderboard.length > 0 && (
+                    <div style={{ marginBottom: "40px" }}>
                       <div
                         style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr auto 1fr",
-                          gap: "20px",
+                          display: "flex",
                           alignItems: "center",
+                          justifyContent: "space-between",
                           marginBottom: "20px",
+                          flexWrap: "wrap",
+                          gap: "15px",
                         }}
                       >
-                        <div
+                        <h2
                           style={{
-                            textAlign: "center",
-                            padding: "15px",
-                            background: "rgba(0, 0, 0, 0.05)",
-                            borderRadius: "12px",
+                            color: "#fff",
+                            fontSize: "28px",
+                            fontWeight: "700",
+                            margin: 0,
+                            textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
                           }}
                         >
-                          <div
-                            style={{
-                              fontSize: "18px",
-                              fontWeight: "700",
-                              marginBottom: "5px",
-                            }}
-                          >
-                            {lastBattle.agentA?.name ||
-                              lastBattle.fighter1?.name ||
-                              "Unknown"}
-                          </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            Power:{" "}
-                            {calculatePower(
-                              lastBattle.agentA || lastBattle.fighter1 || {}
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: "32px" }}>⚔️</div>
+                          🧬 GENE Leaderboard (Top 10)
+                        </h2>
                         <div
                           style={{
-                            textAlign: "center",
-                            padding: "15px",
-                            background: "rgba(0, 0, 0, 0.05)",
-                            borderRadius: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "8px 16px",
+                            background: "rgba(118, 75, 162, 0.2)",
+                            borderRadius: "20px",
+                            color: "#fff",
+                            fontSize: "12px",
+                            fontWeight: "600",
                           }}
+                          title="Sorted by GENE tokens"
                         >
-                          <div
+                          <span
                             style={{
-                              fontSize: "18px",
-                              fontWeight: "700",
-                              marginBottom: "5px",
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              background: "#764ba2",
+                              animation: "pulse 2s infinite",
                             }}
-                          >
-                            {lastBattle.agentB?.name ||
-                              lastBattle.fighter2?.name ||
-                              "Unknown"}
-                          </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            Power:{" "}
-                            {calculatePower(
-                              lastBattle.agentB || lastBattle.fighter2 || {}
-                            )}
-                          </div>
+                          />
+                          GENE Tokens
                         </div>
                       </div>
                       <div
                         style={{
-                          textAlign: "center",
+                          background: "rgba(255, 255, 255, 0.95)",
+                          borderRadius: "16px",
                           padding: "20px",
-                          background:
-                            "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                          borderRadius: "12px",
-                          border: "3px solid #fda085",
+                          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
                         }}
                       >
-                        <div
+                        <ol
                           style={{
-                            fontSize: "20px",
-                            fontWeight: "700",
-                            color: "#fff",
-                            marginBottom: "10px",
+                            listStyle: "none",
+                            padding: 0,
+                            margin: 0,
+                            counterReset: "geneLeaderboard",
                           }}
                         >
-                          🏆 Winner
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "28px",
-                            fontWeight: "800",
-                            color: "#fff",
-                            marginBottom: "5px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "10px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          {lastBattle.winner?.name || "Unknown"}
-                          {lastBattle.winner?.rareTrait && (
-                            <span
-                              style={{
-                                display: "inline-block",
-                                padding: "4px 12px",
-                                borderRadius: "20px",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                                background: "rgba(255, 255, 255, 0.3)",
-                                backdropFilter: "blur(10px)",
-                                color: "#fff",
-                                textTransform: "capitalize",
-                              }}
-                            >
-                              ✨ {lastBattle.winner.rareTrait.name}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: "16px", color: "#fff" }}>
-                          Power: {calculatePower(lastBattle.winner || {})} | XP:{" "}
-                          {lastBattle.winner?.xp || 0}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#fff",
-                            marginTop: "8px",
-                            padding: "8px",
-                            background: "rgba(76, 175, 80, 0.3)",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          ⬆️ +10 XP gained!
-                        </div>
-                        {lastBattle.loser && (
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "rgba(255, 255, 255, 0.8)",
-                              marginTop: "8px",
-                            }}
-                          >
-                            {lastBattle.loser.name} gained +2 XP (XP:{" "}
-                            {lastBattle.loser.xp || 0})
-                          </div>
-                        )}
+                          {geneLeaderboard.slice(0, 10).map((agent, index) => {
+                            const tooltipText = `Full Stats:\nStrength: ${
+                              agent.traits.strength
+                            }\nSpeed: ${agent.traits.speed}\nIntelligence: ${
+                              agent.traits.intelligence
+                            }\nXP: ${agent.xp || 0}\nEnergy: ${
+                              agent.energy || 100
+                            }/100\nPower: ${
+                              agent.power || calculatePower(agent)
+                            }\nGENE: ${agent.gene || 0}${
+                              agent.rareTrait
+                                ? `\nRare Trait: ${agent.rareTrait.name} (+${agent.rareTrait.powerBonus})`
+                                : ""
+                            }`;
+                            return (
+                              <li
+                                key={agent.id}
+                                title={tooltipText}
+                                style={{
+                                  counterIncrement: "geneLeaderboard",
+                                  padding: "15px",
+                                  marginBottom: "10px",
+                                  background:
+                                    index === 0
+                                      ? "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
+                                      : index === 1
+                                      ? "linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)"
+                                      : index === 2
+                                      ? "linear-gradient(135deg, #cd7f32 0%, #e6a857 100%)"
+                                      : "rgba(0, 0, 0, 0.05)",
+                                  borderRadius: "12px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  border:
+                                    index < 3
+                                      ? "2px solid rgba(255, 255, 255, 0.5)"
+                                      : "none",
+                                  cursor: "help",
+                                  transition: "all 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (index >= 3) {
+                                    e.currentTarget.style.background =
+                                      "rgba(0, 0, 0, 0.08)";
+                                    e.currentTarget.style.transform =
+                                      "translateX(5px)";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (index >= 3) {
+                                    e.currentTarget.style.background =
+                                      "rgba(0, 0, 0, 0.05)";
+                                    e.currentTarget.style.transform =
+                                      "translateX(0)";
+                                  }
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "15px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: "24px",
+                                      fontWeight: "bold",
+                                      color: index < 3 ? "#fff" : "#333",
+                                      minWidth: "30px",
+                                    }}
+                                  >
+                                    {index === 0
+                                      ? "🥇"
+                                      : index === 1
+                                      ? "🥈"
+                                      : index === 2
+                                      ? "🥉"
+                                      : `#${index + 1}`}
+                                  </span>
+                                  <div>
+                                    <div
+                                      style={{
+                                        fontSize: "18px",
+                                        fontWeight: "700",
+                                        color: index < 3 ? "#fff" : "#333",
+                                        marginBottom: "5px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        flexWrap: "wrap",
+                                      }}
+                                    >
+                                      {formatAgentName(agent.name)}
+                                      {agent.rareTrait && (
+                                        <span
+                                          style={{
+                                            display: "inline-block",
+                                            padding: "2px 8px",
+                                            borderRadius: "12px",
+                                            fontSize: "10px",
+                                            fontWeight: "bold",
+                                            background:
+                                              index < 3
+                                                ? "rgba(255, 255, 255, 0.3)"
+                                                : "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                            color: "#fff",
+                                            textTransform: "capitalize",
+                                          }}
+                                        >
+                                          ✨ {agent.rareTrait.name}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: "12px",
+                                        color:
+                                          index < 3
+                                            ? "rgba(255,255,255,0.9)"
+                                            : "#666",
+                                      }}
+                                    >
+                                      STR {agent.traits.strength} | SPD{" "}
+                                      {agent.traits.speed} | INT{" "}
+                                      {agent.traits.intelligence} | XP:{" "}
+                                      {agent.xp || 0} | ⚡ {agent.energy || 100}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: "5px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: "24px",
+                                      fontWeight: "800",
+                                      color: index < 3 ? "#fff" : "#333",
+                                    }}
+                                  >
+                                    {agent.gene || 0}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      color:
+                                        index < 3
+                                          ? "rgba(255,255,255,0.8)"
+                                          : "#666",
+                                      textTransform: "uppercase",
+                                    }}
+                                  >
+                                    GENE
+                                  </div>
+                                  {(agent.gene || 0) >= 10 && (
+                                    <div
+                                      style={{
+                                        fontSize: "10px",
+                                        color: index < 3 ? "#fff" : "#4caf50",
+                                        fontWeight: "bold",
+                                        marginTop: "5px",
+                                        padding: "2px 6px",
+                                        background:
+                                          index < 3
+                                            ? "rgba(255,255,255,0.3)"
+                                            : "rgba(76, 175, 80, 0.2)",
+                                        borderRadius: "8px",
+                                      }}
+                                    >
+                                      Reward Ready!
+                                    </div>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ol>
                       </div>
                     </div>
                   )}
-                </div>
 
-                {/* GENE Leaderboard Section */}
-                {geneLeaderboard.length > 0 && (
+                  {/* Power Leaderboard Section */}
+                  {leaderboard.length > 0 && (
+                    <div style={{ marginBottom: "40px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "20px",
+                          flexWrap: "wrap",
+                          gap: "15px",
+                        }}
+                      >
+                        <h2
+                          style={{
+                            color: "#fff",
+                            fontSize: "28px",
+                            fontWeight: "700",
+                            margin: 0,
+                            textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+                          }}
+                        >
+                          🏆 Real-Time Leaderboard (Top 10)
+                        </h2>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "8px 16px",
+                            background: "rgba(76, 175, 80, 0.2)",
+                            borderRadius: "20px",
+                            color: "#fff",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                          }}
+                          title="Updates every 5 seconds"
+                        >
+                          <span
+                            style={{
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              background: "#4caf50",
+                              animation: "pulse 2s infinite",
+                            }}
+                          />
+                          Live Updates
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          background: "rgba(255, 255, 255, 0.95)",
+                          borderRadius: "16px",
+                          padding: "20px",
+                          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                        }}
+                      >
+                        <ol
+                          style={{
+                            listStyle: "none",
+                            padding: 0,
+                            margin: 0,
+                            counterReset: "leaderboard",
+                          }}
+                        >
+                          {leaderboard.slice(0, 10).map((agent, index) => {
+                            const tooltipText = `Full Stats:\nStrength: ${
+                              agent.traits.strength
+                            }\nSpeed: ${agent.traits.speed}\nIntelligence: ${
+                              agent.traits.intelligence
+                            }\nXP: ${agent.xp || 0}\nEnergy: ${
+                              agent.energy || 100
+                            }/100\nPower: ${agent.power}${
+                              agent.rareTrait
+                                ? `\nRare Trait: ${agent.rareTrait.name} (+${agent.rareTrait.powerBonus})`
+                                : ""
+                            }`;
+                            return (
+                              <li
+                                key={agent.id}
+                                title={tooltipText}
+                                style={{
+                                  counterIncrement: "leaderboard",
+                                  padding: "15px",
+                                  marginBottom: "10px",
+                                  background:
+                                    index === 0
+                                      ? "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
+                                      : index === 1
+                                      ? "linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)"
+                                      : index === 2
+                                      ? "linear-gradient(135deg, #cd7f32 0%, #e6a857 100%)"
+                                      : "rgba(0, 0, 0, 0.05)",
+                                  borderRadius: "12px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  border:
+                                    index < 3
+                                      ? "2px solid rgba(255, 255, 255, 0.5)"
+                                      : "none",
+                                  cursor: "help",
+                                  transition: "all 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (index >= 3) {
+                                    e.currentTarget.style.background =
+                                      "rgba(0, 0, 0, 0.08)";
+                                    e.currentTarget.style.transform =
+                                      "translateX(5px)";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (index >= 3) {
+                                    e.currentTarget.style.background =
+                                      "rgba(0, 0, 0, 0.05)";
+                                    e.currentTarget.style.transform =
+                                      "translateX(0)";
+                                  }
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "15px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: "24px",
+                                      fontWeight: "bold",
+                                      color: index < 3 ? "#fff" : "#333",
+                                      minWidth: "30px",
+                                    }}
+                                  >
+                                    {index === 0
+                                      ? "🥇"
+                                      : index === 1
+                                      ? "🥈"
+                                      : index === 2
+                                      ? "🥉"
+                                      : `#${index + 1}`}
+                                  </span>
+                                  <div>
+                                    <div
+                                      style={{
+                                        fontSize: "18px",
+                                        fontWeight: "700",
+                                        color: index < 3 ? "#fff" : "#333",
+                                        marginBottom: "5px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        flexWrap: "wrap",
+                                      }}
+                                    >
+                                      {formatAgentName(agent.name)}
+                                      {agent.rareTrait && (
+                                        <span
+                                          style={{
+                                            display: "inline-block",
+                                            padding: "2px 8px",
+                                            borderRadius: "12px",
+                                            fontSize: "10px",
+                                            fontWeight: "bold",
+                                            background:
+                                              index < 3
+                                                ? "rgba(255, 255, 255, 0.3)"
+                                                : "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                            color: "#fff",
+                                            textTransform: "capitalize",
+                                          }}
+                                        >
+                                          ✨ {agent.rareTrait.name}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: "12px",
+                                        color:
+                                          index < 3
+                                            ? "rgba(255,255,255,0.9)"
+                                            : "#666",
+                                      }}
+                                    >
+                                      STR {agent.traits.strength} | SPD{" "}
+                                      {agent.traits.speed} | INT{" "}
+                                      {agent.traits.intelligence} | XP:{" "}
+                                      {agent.xp || 0} | ⚡ {agent.energy || 100}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    gap: "5px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: "24px",
+                                      fontWeight: "800",
+                                      color: index < 3 ? "#fff" : "#333",
+                                    }}
+                                  >
+                                    {agent.power}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      color:
+                                        index < 3
+                                          ? "rgba(255,255,255,0.8)"
+                                          : "#666",
+                                      textTransform: "uppercase",
+                                    }}
+                                  >
+                                    Power
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parent Agents Section */}
                   <div style={{ marginBottom: "40px" }}>
                     <h2
                       style={{
@@ -1617,975 +1962,411 @@ function App() {
                         textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
                       }}
                     >
-                      🧬 GENE Leaderboard (Top 10)
+                      👥 Parent Agents (click to select 2)
                     </h2>
                     <div
                       style={{
-                        background: "rgba(255, 255, 255, 0.95)",
-                        borderRadius: "16px",
-                        padding: "20px",
-                        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(280px, 1fr))",
+                        gap: "20px",
                       }}
                     >
-                      <ol
-                        style={{
-                          listStyle: "none",
-                          padding: 0,
-                          margin: 0,
-                          counterReset: "geneLeaderboard",
-                        }}
-                      >
-                        {geneLeaderboard.slice(0, 10).map((agent, index) => {
-                          return (
-                            <li
-                              key={agent.id}
+                      {agents.map((agent) => {
+                        const isSelected = selectedParents.find(
+                          (a) => a.id === agent.id
+                        );
+                        return (
+                          <div
+                            key={agent.id}
+                            onClick={() => toggleParent(agent)}
+                            style={{
+                              background: isSelected
+                                ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                                : !canBreed(agent)
+                                ? "rgba(245, 87, 108, 0.1)"
+                                : "rgba(255, 255, 255, 0.95)",
+                              border: isSelected
+                                ? "3px solid #fff"
+                                : !canBreed(agent)
+                                ? "2px solid rgba(245, 87, 108, 0.5)"
+                                : "2px solid rgba(255, 255, 255, 0.3)",
+                              borderRadius: "16px",
+                              padding: "20px",
+                              cursor: canBreed(agent)
+                                ? "pointer"
+                                : "not-allowed",
+                              transition: "all 0.3s ease",
+                              transform: isSelected
+                                ? "scale(1.05)"
+                                : "scale(1)",
+                              boxShadow: isSelected
+                                ? "0 10px 30px rgba(102, 126, 234, 0.4)"
+                                : "0 4px 15px rgba(0, 0, 0, 0.1)",
+                              opacity:
+                                !canBreed(agent) && !isSelected ? 0.7 : 1,
+                              overflow: "hidden",
+                              boxSizing: "border-box",
+                              wordWrap: "break-word",
+                              overflowWrap: "break-word",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) {
+                                e.currentTarget.style.transform = "scale(1.02)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 6px 20px rgba(0, 0, 0, 0.15)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) {
+                                e.currentTarget.style.transform = "scale(1)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 4px 15px rgba(0, 0, 0, 0.1)";
+                              }
+                            }}
+                          >
+                            <h3
                               style={{
-                                counterIncrement: "geneLeaderboard",
-                                padding: "15px",
-                                marginBottom: "10px",
-                                background:
-                                  index === 0
-                                    ? "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
-                                    : index === 1
-                                    ? "linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)"
-                                    : index === 2
-                                    ? "linear-gradient(135deg, #cd7f32 0%, #e6a857 100%)"
-                                    : "rgba(0, 0, 0, 0.05)",
-                                borderRadius: "12px",
+                                margin: "0 0 15px 0",
+                                fontSize: "22px",
+                                fontWeight: "700",
+                                color: isSelected ? "#fff" : "#333",
                                 display: "flex",
                                 alignItems: "center",
-                                justifyContent: "space-between",
-                                border:
-                                  index < 3
-                                    ? "2px solid rgba(255, 255, 255, 0.5)"
-                                    : "none",
-                                transition: "all 0.2s ease",
+                                gap: "10px",
+                                flexWrap: "wrap",
+                                wordWrap: "break-word",
+                                overflowWrap: "break-word",
+                                hyphens: "auto",
+                                maxWidth: "100%",
                               }}
-                              onMouseEnter={(e) => {
-                                if (index >= 3) {
-                                  e.currentTarget.style.background =
-                                    "rgba(0, 0, 0, 0.08)";
-                                  e.currentTarget.style.transform =
-                                    "translateX(5px)";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (index >= 3) {
-                                  e.currentTarget.style.background =
-                                    "rgba(0, 0, 0, 0.05)";
-                                  e.currentTarget.style.transform =
-                                    "translateX(0)";
-                                }
-                              }}
+                              title={agent.name}
                             >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "15px",
-                                }}
-                              >
+                              {formatAgentName(agent.name)}
+                              {agent.rareTrait && (
                                 <span
                                   style={{
-                                    fontSize: "24px",
+                                    display: "inline-block",
+                                    padding: "4px 12px",
+                                    borderRadius: "20px",
+                                    fontSize: "12px",
                                     fontWeight: "bold",
-                                    color: index < 3 ? "#fff" : "#333",
-                                    minWidth: "30px",
+                                    background:
+                                      "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                    color: "#fff",
+                                    textTransform: "capitalize",
+                                    boxShadow:
+                                      "0 2px 8px rgba(246, 211, 101, 0.4)",
                                   }}
                                 >
-                                  {index === 0
-                                    ? "🥇"
-                                    : index === 1
-                                    ? "🥈"
-                                    : index === 2
-                                    ? "🥉"
-                                    : `#${index + 1}`}
+                                  ✨ {agent.rareTrait.name} (+
+                                  {agent.rareTrait.powerBonus})
                                 </span>
-                                <div>
-                                  <div
+                              )}
+                            </h3>
+                            <ul
+                              style={{
+                                listStyle: "none",
+                                padding: 0,
+                                margin: 0,
+                              }}
+                            >
+                              {Object.entries(agent.traits).map(
+                                ([key, value]) => (
+                                  <li
+                                    key={key}
                                     style={{
-                                      fontSize: "18px",
-                                      fontWeight: "700",
-                                      color: index < 3 ? "#fff" : "#333",
-                                      marginBottom: "5px",
+                                      padding: "8px 0",
+                                      borderBottom:
+                                        "1px solid rgba(0, 0, 0, 0.1)",
+                                      color: isSelected ? "#fff" : "#666",
+                                      fontSize: "14px",
                                     }}
                                   >
-                                    {agent.name}
-                                  </div>
-                                  <div
-                                    style={{
-                                      fontSize: "12px",
-                                      color:
-                                        index < 3
-                                          ? "rgba(255,255,255,0.9)"
-                                          : "#666",
-                                    }}
-                                  >
-                                    Power: {calculatePower(agent)} | Energy:{" "}
-                                    {agent.energy || 100}/100
-                                  </div>
-                                </div>
-                              </div>
-                              <div
+                                    <strong
+                                      style={{ textTransform: "capitalize" }}
+                                    >
+                                      {key}:
+                                    </strong>{" "}
+                                    {value}
+                                  </li>
+                                )
+                              )}
+                              <li
                                 style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-end",
-                                  gap: "5px",
+                                  padding: "8px 0",
+                                  marginTop: "8px",
+                                  borderTop: "2px solid rgba(0, 0, 0, 0.1)",
+                                  color: isSelected ? "#fff" : "#333",
+                                  fontSize: "16px",
+                                  fontWeight: "700",
                                 }}
                               >
-                                <div
-                                  style={{
-                                    fontSize: "28px",
-                                    fontWeight: "800",
-                                    color: index < 3 ? "#fff" : "#333",
-                                  }}
-                                >
-                                  {agent.gene || 0}
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    color:
-                                      index < 3
-                                        ? "rgba(255,255,255,0.8)"
-                                        : "#666",
-                                    textTransform: "uppercase",
-                                  }}
-                                >
-                                  GENE
-                                </div>
-                                {(agent.gene || 0) >= 10 && (
-                                  <div
+                                ⚡ Power: {calculatePower(agent)}
+                              </li>
+                              <li
+                                style={{
+                                  padding: "8px 0",
+                                  color: isSelected ? "#fff" : "#666",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                ⭐ XP: {agent.xp || 0}
+                              </li>
+                              <li
+                                style={{
+                                  padding: "8px 0",
+                                  color: isSelected ? "#fff" : "#666",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                ⚡ Energy: {agent.energy || 100}/100
+                                {!canBreed(agent) && (
+                                  <span
                                     style={{
-                                      fontSize: "10px",
-                                      color: index < 3 ? "#fff" : "#4caf50",
-                                      fontWeight: "bold",
-                                      marginTop: "5px",
+                                      marginLeft: "8px",
                                       padding: "2px 6px",
-                                      background:
-                                        index < 3
-                                          ? "rgba(255,255,255,0.3)"
-                                          : "rgba(76, 175, 80, 0.2)",
                                       borderRadius: "8px",
+                                      fontSize: "11px",
+                                      background: "rgba(245, 87, 108, 0.2)",
+                                      color: isSelected ? "#fff" : "#f5576c",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    Low Energy
+                                  </span>
+                                )}
+                              </li>
+                              <li
+                                style={{
+                                  padding: "8px 0",
+                                  marginTop: "4px",
+                                  color: isSelected ? "#fff" : "#333",
+                                  fontSize: "15px",
+                                  fontWeight: "700",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                              >
+                                🧬 GENE: {agent.gene || 0}
+                                {(agent.gene || 0) >= 10 && (
+                                  <span
+                                    style={{
+                                      padding: "2px 8px",
+                                      borderRadius: "8px",
+                                      fontSize: "10px",
+                                      background: "rgba(76, 175, 80, 0.3)",
+                                      color: isSelected ? "#fff" : "#4caf50",
+                                      fontWeight: "bold",
                                     }}
                                   >
                                     Reward Ready!
-                                  </div>
+                                  </span>
                                 )}
+                              </li>
+                            </ul>
+                            {isSelected && (
+                              <div
+                                style={{
+                                  marginTop: "15px",
+                                  padding: "8px",
+                                  background: "rgba(255, 255, 255, 0.2)",
+                                  borderRadius: "8px",
+                                  textAlign: "center",
+                                  color: "#fff",
+                                  fontWeight: "bold",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                ✓ Selected
                               </div>
-                            </li>
-                          );
-                        })}
-                      </ol>
+                            )}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "10px",
+                                marginTop: "15px",
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {/* Buy Energy Button */}
+                              {agent.energy < 100 && (
+                                <button
+                                  onClick={() => purchaseEnergy(agent, 20)}
+                                  style={{
+                                    width: "100%",
+                                    padding: "14px 16px",
+                                    fontSize: "15px",
+                                    fontWeight: "700",
+                                    color: "#fff",
+                                    background:
+                                      "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                    border: "none",
+                                    borderRadius: "12px",
+                                    cursor: "pointer",
+                                    boxShadow:
+                                      "0 4px 15px rgba(246, 211, 101, 0.4)",
+                                    transition: "all 0.3s ease",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.5px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(-2px) scale(1.02)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 6px 20px rgba(246, 211, 101, 0.5)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(0) scale(1)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 4px 15px rgba(246, 211, 101, 0.4)";
+                                  }}
+                                >
+                                  ⚡ Buy Energy (+20) - 10 Coins
+                                </button>
+                              )}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "10px",
+                                }}
+                              >
+                                <button
+                                  onClick={() => updateAgent(agent.id)}
+                                  style={{
+                                    flex: 1,
+                                    padding: "12px 16px",
+                                    fontSize: "14px",
+                                    fontWeight: "700",
+                                    color: "#fff",
+                                    background:
+                                      "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                                    border: "none",
+                                    borderRadius: "12px",
+                                    cursor: "pointer",
+                                    boxShadow:
+                                      "0 4px 15px rgba(79, 172, 254, 0.4)",
+                                    transition: "all 0.3s ease",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.5px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(-2px) scale(1.02)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 6px 20px rgba(79, 172, 254, 0.5)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(0)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 4px 15px rgba(79, 172, 254, 0.4)";
+                                  }}
+                                >
+                                  ✏️ +1 STR
+                                </button>
+                                <button
+                                  onClick={() => deleteAgent(agent.id)}
+                                  style={{
+                                    flex: 1,
+                                    padding: "12px 16px",
+                                    fontSize: "14px",
+                                    fontWeight: "700",
+                                    color: "#fff",
+                                    background:
+                                      "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
+                                    border: "none",
+                                    borderRadius: "12px",
+                                    cursor: "pointer",
+                                    boxShadow:
+                                      "0 4px 15px rgba(245, 87, 108, 0.4)",
+                                    transition: "all 0.3s ease",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.5px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(-2px) scale(1.02)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 6px 20px rgba(245, 87, 108, 0.5)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(0)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 4px 15px rgba(245, 87, 108, 0.4)";
+                                  }}
+                                >
+                                  ❌ Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                )}
 
-                {/* Power Leaderboard Section */}
-                {leaderboard.length > 0 && (
-                  <div style={{ marginBottom: "40px" }}>
+                  {/* Agent Selector */}
+                  <AgentSelector
+                    agents={agents}
+                    selected={selectedParents}
+                    onSelect={(agent) => toggleParent(agent)}
+                  />
+
+                  {/* Breed Button */}
+                  <div style={{ textAlign: "center", marginBottom: "40px" }}>
                     <div
                       style={{
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: "20px",
-                        flexWrap: "wrap",
+                        justifyContent: "center",
                         gap: "15px",
+                        flexWrap: "wrap",
                       }}
                     >
-                      <h2
-                        style={{
-                          color: "#fff",
-                          fontSize: "28px",
-                          fontWeight: "700",
-                          margin: 0,
-                          textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                        }}
-                      >
-                        🏆 Real-Time Leaderboard (Top 10)
-                      </h2>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          padding: "8px 16px",
-                          background: "rgba(76, 175, 80, 0.2)",
-                          borderRadius: "20px",
-                          color: "#fff",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                        }}
-                        title="Updates every 5 seconds"
-                      >
-                        <span
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: "#4caf50",
-                            animation: "pulse 2s infinite",
-                          }}
-                        />
-                        Live Updates
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        background: "rgba(255, 255, 255, 0.95)",
-                        borderRadius: "16px",
-                        padding: "20px",
-                        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-                      }}
-                    >
-                      <ol
-                        style={{
-                          listStyle: "none",
-                          padding: 0,
-                          margin: 0,
-                          counterReset: "leaderboard",
-                        }}
-                      >
-                        {leaderboard.slice(0, 10).map((agent, index) => {
-                          const tooltipText = `Full Stats:\nStrength: ${
-                            agent.traits.strength
-                          }\nSpeed: ${agent.traits.speed}\nIntelligence: ${
-                            agent.traits.intelligence
-                          }\nXP: ${agent.xp || 0}\nEnergy: ${
-                            agent.energy || 100
-                          }/100\nPower: ${agent.power}${
-                            agent.rareTrait
-                              ? `\nRare Trait: ${agent.rareTrait.name} (+${agent.rareTrait.powerBonus})`
-                              : ""
-                          }`;
-                          return (
-                            <li
-                              key={agent.id}
-                              title={tooltipText}
-                              style={{
-                                counterIncrement: "leaderboard",
-                                padding: "15px",
-                                marginBottom: "10px",
-                                background:
-                                  index === 0
-                                    ? "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
-                                    : index === 1
-                                    ? "linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)"
-                                    : index === 2
-                                    ? "linear-gradient(135deg, #cd7f32 0%, #e6a857 100%)"
-                                    : "rgba(0, 0, 0, 0.05)",
-                                borderRadius: "12px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                border:
-                                  index < 3
-                                    ? "2px solid rgba(255, 255, 255, 0.5)"
-                                    : "none",
-                                cursor: "help",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (index >= 3) {
-                                  e.currentTarget.style.background =
-                                    "rgba(0, 0, 0, 0.08)";
-                                  e.currentTarget.style.transform =
-                                    "translateX(5px)";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (index >= 3) {
-                                  e.currentTarget.style.background =
-                                    "rgba(0, 0, 0, 0.05)";
-                                  e.currentTarget.style.transform =
-                                    "translateX(0)";
-                                }
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "15px",
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: "24px",
-                                    fontWeight: "bold",
-                                    color: index < 3 ? "#fff" : "#333",
-                                    minWidth: "30px",
-                                  }}
-                                >
-                                  {index === 0
-                                    ? "🥇"
-                                    : index === 1
-                                    ? "🥈"
-                                    : index === 2
-                                    ? "🥉"
-                                    : `#${index + 1}`}
-                                </span>
-                                <div>
-                                  <div
-                                    style={{
-                                      fontSize: "18px",
-                                      fontWeight: "700",
-                                      color: index < 3 ? "#fff" : "#333",
-                                      marginBottom: "5px",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "8px",
-                                      flexWrap: "wrap",
-                                    }}
-                                  >
-                                    {agent.name}
-                                    {agent.rareTrait && (
-                                      <span
-                                        style={{
-                                          display: "inline-block",
-                                          padding: "2px 8px",
-                                          borderRadius: "12px",
-                                          fontSize: "10px",
-                                          fontWeight: "bold",
-                                          background:
-                                            index < 3
-                                              ? "rgba(255, 255, 255, 0.3)"
-                                              : "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                                          color: "#fff",
-                                          textTransform: "capitalize",
-                                        }}
-                                      >
-                                        ✨ {agent.rareTrait.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div
-                                    style={{
-                                      fontSize: "12px",
-                                      color:
-                                        index < 3
-                                          ? "rgba(255,255,255,0.9)"
-                                          : "#666",
-                                    }}
-                                  >
-                                    STR {agent.traits.strength} | SPD{" "}
-                                    {agent.traits.speed} | INT{" "}
-                                    {agent.traits.intelligence} | XP:{" "}
-                                    {agent.xp || 0} | ⚡ {agent.energy || 100}
-                                  </div>
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-end",
-                                  gap: "5px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "24px",
-                                    fontWeight: "800",
-                                    color: index < 3 ? "#fff" : "#333",
-                                  }}
-                                >
-                                  {agent.power}
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    color:
-                                      index < 3
-                                        ? "rgba(255,255,255,0.8)"
-                                        : "#666",
-                                    textTransform: "uppercase",
-                                  }}
-                                >
-                                  Power
-                                </div>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    </div>
-                  </div>
-                )}
-
-                {/* Parent Agents Section */}
-                <div style={{ marginBottom: "40px" }}>
-                  <h2
-                    style={{
-                      color: "#fff",
-                      fontSize: "28px",
-                      fontWeight: "700",
-                      marginBottom: "20px",
-                      textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                    }}
-                  >
-                    👥 Parent Agents (click to select 2)
-                  </h2>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(280px, 1fr))",
-                      gap: "20px",
-                    }}
-                  >
-                    {agents.map((agent) => {
-                      const isSelected = selectedParents.find(
-                        (a) => a.id === agent.id
-                      );
-                      return (
-                        <div
-                          key={agent.id}
-                          onClick={() => toggleParent(agent)}
-                          style={{
-                            background: isSelected
-                              ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                              : !canBreed(agent)
-                              ? "rgba(245, 87, 108, 0.1)"
-                              : "rgba(255, 255, 255, 0.95)",
-                            border: isSelected
-                              ? "3px solid #fff"
-                              : !canBreed(agent)
-                              ? "2px solid rgba(245, 87, 108, 0.5)"
-                              : "2px solid rgba(255, 255, 255, 0.3)",
-                            borderRadius: "16px",
-                            padding: "20px",
-                            cursor: canBreed(agent) ? "pointer" : "not-allowed",
-                            transition: "all 0.3s ease",
-                            transform: isSelected ? "scale(1.05)" : "scale(1)",
-                            boxShadow: isSelected
-                              ? "0 10px 30px rgba(102, 126, 234, 0.4)"
-                              : "0 4px 15px rgba(0, 0, 0, 0.1)",
-                            opacity: !canBreed(agent) && !isSelected ? 0.7 : 1,
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.transform = "scale(1.02)";
-                              e.currentTarget.style.boxShadow =
-                                "0 6px 20px rgba(0, 0, 0, 0.15)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.transform = "scale(1)";
-                              e.currentTarget.style.boxShadow =
-                                "0 4px 15px rgba(0, 0, 0, 0.1)";
-                            }
-                          }}
-                        >
-                          <h3
-                            style={{
-                              margin: "0 0 15px 0",
-                              fontSize: "22px",
-                              fontWeight: "700",
-                              color: isSelected ? "#fff" : "#333",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {agent.name}
-                            {agent.rareTrait && (
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  padding: "4px 12px",
-                                  borderRadius: "20px",
-                                  fontSize: "12px",
-                                  fontWeight: "bold",
-                                  background:
-                                    "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                                  color: "#fff",
-                                  textTransform: "capitalize",
-                                  boxShadow:
-                                    "0 2px 8px rgba(246, 211, 101, 0.4)",
-                                }}
-                              >
-                                ✨ {agent.rareTrait.name} (+
-                                {agent.rareTrait.powerBonus})
-                              </span>
-                            )}
-                          </h3>
-                          <ul
-                            style={{ listStyle: "none", padding: 0, margin: 0 }}
-                          >
-                            {Object.entries(agent.traits).map(
-                              ([key, value]) => (
-                                <li
-                                  key={key}
-                                  style={{
-                                    padding: "8px 0",
-                                    borderBottom:
-                                      "1px solid rgba(0, 0, 0, 0.1)",
-                                    color: isSelected ? "#fff" : "#666",
-                                    fontSize: "14px",
-                                  }}
-                                >
-                                  <strong
-                                    style={{ textTransform: "capitalize" }}
-                                  >
-                                    {key}:
-                                  </strong>{" "}
-                                  {value}
-                                </li>
-                              )
-                            )}
-                            <li
-                              style={{
-                                padding: "8px 0",
-                                marginTop: "8px",
-                                borderTop: "2px solid rgba(0, 0, 0, 0.1)",
-                                color: isSelected ? "#fff" : "#333",
-                                fontSize: "16px",
-                                fontWeight: "700",
-                              }}
-                            >
-                              ⚡ Power: {calculatePower(agent)}
-                            </li>
-                            <li
-                              style={{
-                                padding: "8px 0",
-                                color: isSelected ? "#fff" : "#666",
-                                fontSize: "14px",
-                              }}
-                            >
-                              ⭐ XP: {agent.xp || 0}
-                            </li>
-                            <li
-                              style={{
-                                padding: "8px 0",
-                                color: isSelected ? "#fff" : "#666",
-                                fontSize: "14px",
-                              }}
-                            >
-                              ⚡ Energy: {agent.energy || 100}/100
-                              {!canBreed(agent) && (
-                                <span
-                                  style={{
-                                    marginLeft: "8px",
-                                    padding: "2px 6px",
-                                    borderRadius: "8px",
-                                    fontSize: "11px",
-                                    background: "rgba(245, 87, 108, 0.2)",
-                                    color: isSelected ? "#fff" : "#f5576c",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  Low Energy
-                                </span>
-                              )}
-                            </li>
-                            <li
-                              style={{
-                                padding: "8px 0",
-                                marginTop: "4px",
-                                color: isSelected ? "#fff" : "#333",
-                                fontSize: "15px",
-                                fontWeight: "700",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                              }}
-                            >
-                              🧬 GENE: {agent.gene || 0}
-                              {(agent.gene || 0) >= 10 && (
-                                <span
-                                  style={{
-                                    padding: "2px 8px",
-                                    borderRadius: "8px",
-                                    fontSize: "10px",
-                                    background: "rgba(76, 175, 80, 0.3)",
-                                    color: isSelected ? "#fff" : "#4caf50",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  Reward Ready!
-                                </span>
-                              )}
-                            </li>
-                          </ul>
-                          {isSelected && (
-                            <div
-                              style={{
-                                marginTop: "15px",
-                                padding: "8px",
-                                background: "rgba(255, 255, 255, 0.2)",
-                                borderRadius: "8px",
-                                textAlign: "center",
-                                color: "#fff",
-                                fontWeight: "bold",
-                                fontSize: "12px",
-                              }}
-                            >
-                              ✓ Selected
-                            </div>
-                          )}
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "10px",
-                              marginTop: "15px",
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {/* Buy Energy Button */}
-                            {agent.energy < 100 && (
-                              <button
-                                onClick={() => purchaseEnergy(agent, 20)}
-                                style={{
-                                  width: "100%",
-                                  padding: "10px",
-                                  fontSize: "13px",
-                                  fontWeight: "600",
-                                  color: "#fff",
-                                  background:
-                                    "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                                  border: "none",
-                                  borderRadius: "8px",
-                                  cursor: "pointer",
-                                  boxShadow:
-                                    "0 2px 8px rgba(246, 211, 101, 0.3)",
-                                  transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform =
-                                    "translateY(-1px)";
-                                  e.currentTarget.style.boxShadow =
-                                    "0 4px 12px rgba(246, 211, 101, 0.4)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform =
-                                    "translateY(0)";
-                                  e.currentTarget.style.boxShadow =
-                                    "0 2px 8px rgba(246, 211, 101, 0.3)";
-                                }}
-                              >
-                                ⚡ Buy Energy (+20) - 10 coins
-                              </button>
-                            )}
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "10px",
-                              }}
-                            >
-                              <button
-                                onClick={() => updateAgent(agent.id)}
-                                style={{
-                                  flex: 1,
-                                  padding: "8px 12px",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                  color: "#fff",
-                                  background:
-                                    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                                  border: "none",
-                                  borderRadius: "8px",
-                                  cursor: "pointer",
-                                  boxShadow:
-                                    "0 2px 8px rgba(79, 172, 254, 0.3)",
-                                  transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform =
-                                    "translateY(-1px)";
-                                  e.currentTarget.style.boxShadow =
-                                    "0 4px 12px rgba(79, 172, 254, 0.4)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform =
-                                    "translateY(0)";
-                                  e.currentTarget.style.boxShadow =
-                                    "0 2px 8px rgba(79, 172, 254, 0.3)";
-                                }}
-                              >
-                                ✏️ +1 STR
-                              </button>
-                              <button
-                                onClick={() => deleteAgent(agent.id)}
-                                style={{
-                                  flex: 1,
-                                  padding: "8px 12px",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                  color: "#fff",
-                                  background:
-                                    "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
-                                  border: "none",
-                                  borderRadius: "8px",
-                                  cursor: "pointer",
-                                  boxShadow:
-                                    "0 2px 8px rgba(245, 87, 108, 0.3)",
-                                  transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform =
-                                    "translateY(-1px)";
-                                  e.currentTarget.style.boxShadow =
-                                    "0 4px 12px rgba(245, 87, 108, 0.4)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform =
-                                    "translateY(0)";
-                                  e.currentTarget.style.boxShadow =
-                                    "0 2px 8px rgba(245, 87, 108, 0.3)";
-                                }}
-                              >
-                                ❌ Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Agent Selector */}
-                <AgentSelector
-                  agents={agents}
-                  selectedParents={selectedParents}
-                  setSelectedParents={setSelectedParents}
-                />
-
-                {/* Breed Button */}
-                <div style={{ textAlign: "center", marginBottom: "40px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: "15px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <button
-                      onClick={() => handleBreed()}
-                      disabled={autoBreeding}
-                      style={{
-                        padding: "16px 40px",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        background: autoBreeding
-                          ? "rgba(255, 255, 255, 0.3)"
-                          : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                        border: "none",
-                        borderRadius: "50px",
-                        cursor: autoBreeding ? "not-allowed" : "pointer",
-                        boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
-                        transition: "all 0.3s ease",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        opacity: autoBreeding ? 0.6 : 1,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!autoBreeding) {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 8px 25px rgba(245, 87, 108, 0.5)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!autoBreeding) {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(245, 87, 108, 0.4)";
-                        }
-                      }}
-                    >
-                      🧬 Breed Selected Parents
-                    </button>
-                    <button
-                      onClick={startAutoBreed}
-                      disabled={autoBreeding}
-                      style={{
-                        padding: "16px 40px",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        background: autoBreeding
-                          ? "rgba(255, 255, 255, 0.3)"
-                          : "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                        border: "none",
-                        borderRadius: "50px",
-                        cursor: autoBreeding ? "not-allowed" : "pointer",
-                        boxShadow: "0 6px 20px rgba(79, 172, 254, 0.4)",
-                        transition: "all 0.3s ease",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        opacity: autoBreeding ? 0.6 : 1,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!autoBreeding) {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 8px 25px rgba(79, 172, 254, 0.5)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!autoBreeding) {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(79, 172, 254, 0.4)";
-                        }
-                      }}
-                    >
-                      ⚡ Start Auto Breed
-                    </button>
-                    <button
-                      onClick={stopAutoBreed}
-                      disabled={!autoBreeding}
-                      style={{
-                        padding: "16px 40px",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        background: !autoBreeding
-                          ? "rgba(255, 255, 255, 0.3)"
-                          : "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
-                        border: "none",
-                        borderRadius: "50px",
-                        cursor: !autoBreeding ? "not-allowed" : "pointer",
-                        boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
-                        transition: "all 0.3s ease",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        opacity: !autoBreeding ? 0.6 : 1,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (autoBreeding) {
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 8px 25px rgba(245, 87, 108, 0.5)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (autoBreeding) {
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow =
-                            "0 6px 20px rgba(245, 87, 108, 0.4)";
-                        }
-                      }}
-                    >
-                      🛑 Stop Auto Breed
-                    </button>
-                  </div>
-                  {autoBreeding && (
-                    <div
-                      style={{
-                        marginTop: "20px",
-                        padding: "12px 24px",
-                        background: "rgba(76, 175, 80, 0.2)",
-                        borderRadius: "50px",
-                        color: "#fff",
-                        fontSize: "16px",
-                        fontWeight: "600",
-                        display: "inline-block",
-                      }}
-                    >
-                      ⚡ Auto-breeding active - Generating offspring every
-                      second...
-                    </div>
-                  )}
-                </div>
-
-                {/* Battle Buttons */}
-                <div
-                  style={{
-                    textAlign: "center",
-                    marginTop: "20px",
-                    marginBottom: "40px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: "15px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <button
-                      onClick={() => handleBattle()}
-                      disabled={autoBattling}
-                      style={{
-                        padding: "16px 40px",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        background: autoBattling
-                          ? "rgba(255, 255, 255, 0.3)"
-                          : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                        border: "none",
-                        borderRadius: "50px",
-                        cursor: autoBattling ? "not-allowed" : "pointer",
-                        boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
-                        transition: "all 0.3s ease",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        opacity: autoBattling ? 0.6 : 1,
-                      }}
-                    >
-                      ⚔️ Battle Selected Parents
-                    </button>
-
-                    <button
-                      onClick={handleRandomBattle}
-                      disabled={autoBattling}
-                      style={{
-                        padding: "16px 40px",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        background: autoBattling
-                          ? "rgba(255, 255, 255, 0.3)"
-                          : "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                        border: "none",
-                        borderRadius: "50px",
-                        cursor: autoBattling ? "not-allowed" : "pointer",
-                        boxShadow: "0 6px 20px rgba(79, 172, 254, 0.4)",
-                        transition: "all 0.3s ease",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        opacity: autoBattling ? 0.6 : 1,
-                      }}
-                    >
-                      🎲 Random Battle
-                    </button>
-
-                    {autoBattling ? (
                       <button
-                        onClick={stopAutoBattle}
+                        onClick={() => handleBreed()}
+                        disabled={autoBreeding}
                         style={{
                           padding: "16px 40px",
                           fontSize: "18px",
                           fontWeight: "700",
                           color: "#fff",
-                          background:
-                            "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
+                          background: autoBreeding
+                            ? "rgba(255, 255, 255, 0.3)"
+                            : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
                           border: "none",
                           borderRadius: "50px",
-                          cursor: "pointer",
+                          cursor: autoBreeding ? "not-allowed" : "pointer",
                           boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
                           transition: "all 0.3s ease",
                           textTransform: "uppercase",
                           letterSpacing: "1px",
+                          opacity: autoBreeding ? 0.6 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!autoBreeding) {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 8px 25px rgba(245, 87, 108, 0.5)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!autoBreeding) {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(245, 87, 108, 0.4)";
+                          }
                         }}
                       >
-                        🛑 Stop Auto Battle
+                        🧬 Breed Selected Parents
                       </button>
-                    ) : (
                       <button
-                        onClick={startAutoBattle}
+                        onClick={startAutoBreed}
                         disabled={autoBreeding}
                         style={{
                           padding: "16px 40px",
@@ -2604,453 +2385,789 @@ function App() {
                           letterSpacing: "1px",
                           opacity: autoBreeding ? 0.6 : 1,
                         }}
+                        onMouseEnter={(e) => {
+                          if (!autoBreeding) {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 8px 25px rgba(79, 172, 254, 0.5)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!autoBreeding) {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(79, 172, 254, 0.4)";
+                          }
+                        }}
                       >
-                        🔁 Start Auto Battle
+                        ⚡ Start Auto Breed
                       </button>
+                      <button
+                        onClick={stopAutoBreed}
+                        disabled={!autoBreeding}
+                        style={{
+                          padding: "16px 40px",
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          color: "#fff",
+                          background: !autoBreeding
+                            ? "rgba(255, 255, 255, 0.3)"
+                            : "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
+                          border: "none",
+                          borderRadius: "50px",
+                          cursor: !autoBreeding ? "not-allowed" : "pointer",
+                          boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
+                          transition: "all 0.3s ease",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px",
+                          opacity: !autoBreeding ? 0.6 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (autoBreeding) {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 8px 25px rgba(245, 87, 108, 0.5)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (autoBreeding) {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow =
+                              "0 6px 20px rgba(245, 87, 108, 0.4)";
+                          }
+                        }}
+                      >
+                        🛑 Stop Auto Breed
+                      </button>
+                    </div>
+                    {autoBreeding && (
+                      <div
+                        style={{
+                          marginTop: "20px",
+                          padding: "12px 24px",
+                          background: "rgba(76, 175, 80, 0.2)",
+                          borderRadius: "50px",
+                          color: "#fff",
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          display: "inline-block",
+                        }}
+                      >
+                        ⚡ Auto-breeding active - Generating offspring every
+                        second...
+                      </div>
                     )}
                   </div>
-                  {autoBattling && (
+
+                  {/* Battle Buttons */}
+                  <div
+                    style={{
+                      textAlign: "center",
+                      marginTop: "20px",
+                      marginBottom: "40px",
+                    }}
+                  >
                     <div
                       style={{
-                        marginTop: "20px",
-                        padding: "12px 24px",
-                        background: "rgba(245, 87, 108, 0.2)",
-                        borderRadius: "50px",
-                        color: "#fff",
-                        fontSize: "16px",
-                        fontWeight: "600",
-                        display: "inline-block",
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: "15px",
+                        flexWrap: "wrap",
                       }}
                     >
-                      ⚔️ Auto-battling active - Fighting every 2 seconds...
+                      <button
+                        onClick={() => handleBattle()}
+                        disabled={autoBattling}
+                        style={{
+                          padding: "16px 40px",
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          color: "#fff",
+                          background: autoBattling
+                            ? "rgba(255, 255, 255, 0.3)"
+                            : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                          border: "none",
+                          borderRadius: "50px",
+                          cursor: autoBattling ? "not-allowed" : "pointer",
+                          boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
+                          transition: "all 0.3s ease",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px",
+                          opacity: autoBattling ? 0.6 : 1,
+                        }}
+                      >
+                        ⚔️ Battle Selected Parents
+                      </button>
+
+                      <button
+                        onClick={handleRandomBattle}
+                        disabled={autoBattling}
+                        style={{
+                          padding: "16px 40px",
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          color: "#fff",
+                          background: autoBattling
+                            ? "rgba(255, 255, 255, 0.3)"
+                            : "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                          border: "none",
+                          borderRadius: "50px",
+                          cursor: autoBattling ? "not-allowed" : "pointer",
+                          boxShadow: "0 6px 20px rgba(79, 172, 254, 0.4)",
+                          transition: "all 0.3s ease",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px",
+                          opacity: autoBattling ? 0.6 : 1,
+                        }}
+                      >
+                        🎲 Random Battle
+                      </button>
+
+                      {autoBattling ? (
+                        <button
+                          onClick={stopAutoBattle}
+                          style={{
+                            padding: "16px 40px",
+                            fontSize: "18px",
+                            fontWeight: "700",
+                            color: "#fff",
+                            background:
+                              "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
+                            border: "none",
+                            borderRadius: "50px",
+                            cursor: "pointer",
+                            boxShadow: "0 6px 20px rgba(245, 87, 108, 0.4)",
+                            transition: "all 0.3s ease",
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                          }}
+                        >
+                          🛑 Stop Auto Battle
+                        </button>
+                      ) : (
+                        <button
+                          onClick={startAutoBattle}
+                          disabled={autoBreeding}
+                          style={{
+                            padding: "16px 40px",
+                            fontSize: "18px",
+                            fontWeight: "700",
+                            color: "#fff",
+                            background: autoBreeding
+                              ? "rgba(255, 255, 255, 0.3)"
+                              : "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                            border: "none",
+                            borderRadius: "50px",
+                            cursor: autoBreeding ? "not-allowed" : "pointer",
+                            boxShadow: "0 6px 20px rgba(79, 172, 254, 0.4)",
+                            transition: "all 0.3s ease",
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                            opacity: autoBreeding ? 0.6 : 1,
+                          }}
+                        >
+                          🔁 Start Auto Battle
+                        </button>
+                      )}
+                    </div>
+                    {autoBattling && (
+                      <div
+                        style={{
+                          marginTop: "20px",
+                          padding: "12px 24px",
+                          background: "rgba(245, 87, 108, 0.2)",
+                          borderRadius: "50px",
+                          color: "#fff",
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          display: "inline-block",
+                        }}
+                      >
+                        ⚔️ Auto-battling active - Fighting every 2 seconds...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Battle Arena */}
+                  <BattleArena battleResult={lastBattle} />
+
+                  {/* Offspring Section */}
+                  {offspringList.length > 0 && (
+                    <div style={{ marginBottom: "40px" }}>
+                      <h2
+                        style={{
+                          color: "#fff",
+                          fontSize: "28px",
+                          fontWeight: "700",
+                          marginBottom: "20px",
+                          textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
+                        🌱 Offspring ({offspringList.length})
+                      </h2>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(300px, 1fr))",
+                          gap: "20px",
+                        }}
+                      >
+                        {offspringList.map((agent) => {
+                          const isMinted = mintedNFTs.find(
+                            (nft) => nft.id === agent.id
+                          );
+                          const rarityColors = getRarityColor(agent.rarity);
+                          return (
+                            <div
+                              key={agent.id}
+                              style={{
+                                background: isMinted
+                                  ? "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
+                                  : "rgba(255, 255, 255, 0.95)",
+                                border: isMinted
+                                  ? "3px solid #fda085"
+                                  : `2px solid ${rarityColors.border}`,
+                                borderRadius: "16px",
+                                padding: "20px",
+                                boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                                position: "relative",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {isMinted && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: "10px",
+                                    right: "10px",
+                                    background:
+                                      "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                    color: "#fff",
+                                    padding: "4px 12px",
+                                    borderRadius: "20px",
+                                    fontSize: "11px",
+                                    fontWeight: "bold",
+                                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                                  }}
+                                >
+                                  🎨 MINTED
+                                </div>
+                              )}
+                              <h3
+                                style={{
+                                  margin: "0 0 10px 0",
+                                  fontSize: "20px",
+                                  fontWeight: "700",
+                                  color: "#333",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                {agent.name}
+                                {agent.rareTrait && (
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 12px",
+                                      borderRadius: "20px",
+                                      fontSize: "11px",
+                                      fontWeight: "bold",
+                                      background:
+                                        "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                      color: "#fff",
+                                      textTransform: "capitalize",
+                                      boxShadow:
+                                        "0 2px 8px rgba(246, 211, 101, 0.4)",
+                                    }}
+                                  >
+                                    ✨ {agent.rareTrait.name} (+
+                                    {agent.rareTrait.powerBonus})
+                                  </span>
+                                )}
+                              </h3>
+                              <div style={{ marginBottom: "15px" }}>
+                                {getRarityBadge(agent.rarity)}
+                                {agent.rarityPercent && (
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      marginLeft: "10px",
+                                      padding: "4px 12px",
+                                      borderRadius: "20px",
+                                      fontSize: "14px",
+                                      fontWeight: "bold",
+                                      background: "rgba(0, 0, 0, 0.1)",
+                                      color: "#333",
+                                    }}
+                                  >
+                                    {agent.rarityPercent.toFixed(2)}%
+                                  </span>
+                                )}
+                              </div>
+                              <ul
+                                style={{
+                                  listStyle: "none",
+                                  padding: 0,
+                                  margin: "0 0 15px 0",
+                                }}
+                              >
+                                {Object.entries(agent.traits).map(
+                                  ([key, value]) => (
+                                    <li
+                                      key={key}
+                                      style={{
+                                        padding: "6px 0",
+                                        borderBottom:
+                                          "1px solid rgba(0, 0, 0, 0.1)",
+                                        color: "#666",
+                                        fontSize: "14px",
+                                      }}
+                                    >
+                                      <strong
+                                        style={{ textTransform: "capitalize" }}
+                                      >
+                                        {key}:
+                                      </strong>{" "}
+                                      {value}
+                                    </li>
+                                  )
+                                )}
+                                <li
+                                  style={{
+                                    padding: "8px 0",
+                                    marginTop: "8px",
+                                    borderTop: "2px solid rgba(0, 0, 0, 0.1)",
+                                    color: "#333",
+                                    fontSize: "16px",
+                                    fontWeight: "700",
+                                  }}
+                                >
+                                  ⚡ Power:{" "}
+                                  {agent.power || calculatePower(agent)}
+                                </li>
+                                <li
+                                  style={{
+                                    padding: "6px 0",
+                                    color: "#666",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  ⭐ XP: {agent.xp || 0}
+                                </li>
+                                <li
+                                  style={{
+                                    padding: "6px 0",
+                                    color: "#666",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  ⚡ Energy: {agent.energy || 100}/100
+                                  {!canBreed(agent) && (
+                                    <span
+                                      style={{
+                                        marginLeft: "8px",
+                                        padding: "2px 6px",
+                                        borderRadius: "8px",
+                                        fontSize: "11px",
+                                        background: "rgba(245, 87, 108, 0.2)",
+                                        color: "#f5576c",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      Low Energy
+                                    </span>
+                                  )}
+                                </li>
+                                <li
+                                  style={{
+                                    padding: "8px 0",
+                                    marginTop: "4px",
+                                    color: "#333",
+                                    fontSize: "15px",
+                                    fontWeight: "700",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  🧬 GENE: {agent.gene || 0}
+                                  {(agent.gene || 0) >= 10 && (
+                                    <span
+                                      style={{
+                                        padding: "2px 8px",
+                                        borderRadius: "8px",
+                                        fontSize: "10px",
+                                        background: "rgba(76, 175, 80, 0.3)",
+                                        color: "#4caf50",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      Reward Ready!
+                                    </span>
+                                  )}
+                                </li>
+                              </ul>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "10px",
+                                  marginTop: "15px",
+                                }}
+                              >
+                                {/* Enhanced NFT Minting for Rare Traits */}
+                                {!isMinted && agent.rareTrait && (
+                                  <button
+                                    onClick={() => mintNFT(agent)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "14px",
+                                      fontSize: "15px",
+                                      fontWeight: "700",
+                                      color: "#fff",
+                                      background:
+                                        "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                      border: "3px solid #fda085",
+                                      borderRadius: "12px",
+                                      cursor: "pointer",
+                                      boxShadow:
+                                        "0 6px 20px rgba(246, 211, 101, 0.5)",
+                                      transition: "all 0.3s ease",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "1px",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-3px) scale(1.02)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 8px 25px rgba(246, 211, 101, 0.6)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0) scale(1)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 6px 20px rgba(246, 211, 101, 0.5)";
+                                    }}
+                                  >
+                                    ✨ Mint Rare NFT (
+                                    {agent.rarity === "rare" ? 20 : 10} coins)
+                                  </button>
+                                )}
+                                {/* Regular NFT Minting */}
+                                {!isMinted && !agent.rareTrait && (
+                                  <button
+                                    onClick={() => mintNFT(agent)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px",
+                                      fontSize: "14px",
+                                      fontWeight: "600",
+                                      color: "#fff",
+                                      background: rarityColors.bg,
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      cursor: "pointer",
+                                      boxShadow:
+                                        "0 4px 15px rgba(0, 0, 0, 0.2)",
+                                      transition: "all 0.3s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-2px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 6px 20px rgba(0, 0, 0, 0.3)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 4px 15px rgba(0, 0, 0, 0.2)";
+                                    }}
+                                  >
+                                    🎨 Mint NFT (
+                                    {agent.rarity === "rare"
+                                      ? 20
+                                      : agent.rarity === "uncommon"
+                                      ? 10
+                                      : 5}{" "}
+                                    coins)
+                                  </button>
+                                )}
+                                {/* Buy Energy for Offspring */}
+                                {agent.energy < 100 && (
+                                  <button
+                                    onClick={() => purchaseEnergy(agent, 20)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "10px",
+                                      fontSize: "13px",
+                                      fontWeight: "600",
+                                      color: "#fff",
+                                      background:
+                                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      cursor: "pointer",
+                                      boxShadow:
+                                        "0 2px 8px rgba(79, 172, 254, 0.3)",
+                                      transition: "all 0.2s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-1px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 4px 12px rgba(79, 172, 254, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 2px 8px rgba(79, 172, 254, 0.3)";
+                                    }}
+                                  >
+                                    ⚡ Buy Energy (+20) - 10 coins
+                                  </button>
+                                )}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: "10px",
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => updateAgent(agent.id)}
+                                    style={{
+                                      padding: "12px 16px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#fff",
+                                      background:
+                                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      cursor: "pointer",
+                                      boxShadow:
+                                        "0 2px 8px rgba(79, 172, 254, 0.3)",
+                                      transition: "all 0.2s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-1px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 4px 12px rgba(79, 172, 254, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 2px 8px rgba(79, 172, 254, 0.3)";
+                                    }}
+                                  >
+                                    ✏️ +1 STR
+                                  </button>
+                                  <button
+                                    onClick={() => deleteAgent(agent.id)}
+                                    style={{
+                                      padding: "12px 16px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: "#fff",
+                                      background:
+                                        "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
+                                      border: "none",
+                                      borderRadius: "10px",
+                                      cursor: "pointer",
+                                      boxShadow:
+                                        "0 2px 8px rgba(245, 87, 108, 0.3)",
+                                      transition: "all 0.2s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-1px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 4px 12px rgba(245, 87, 108, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 2px 8px rgba(245, 87, 108, 0.3)";
+                                    }}
+                                  >
+                                    ❌
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {/* Battle Arena */}
-                <BattleArena lastBattle={lastBattle} />
-
-                {/* Offspring List Component */}
-                <OffspringList offspring={offspringList} />
-
-                {/* Offspring Section */}
-                {offspringList.length > 0 && (
-                  <div style={{ marginBottom: "40px" }}>
-                    <h2
-                      style={{
-                        color: "#fff",
-                        fontSize: "28px",
-                        fontWeight: "700",
-                        marginBottom: "20px",
-                        textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                      }}
-                    >
-                      🌱 Offspring ({offspringList.length})
-                    </h2>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(300px, 1fr))",
-                        gap: "20px",
-                      }}
-                    >
-                      {offspringList.map((agent) => {
-                        const isMinted = mintedNFTs.find(
-                          (nft) => nft.id === agent.id
-                        );
-                        const rarityColors = getRarityColor(agent.rarity);
-                        return (
-                          <div
-                            key={agent.id}
-                            style={{
-                              background: isMinted
-                                ? "linear-gradient(135deg, #f6d365 0%, #fda085 100%)"
-                                : "rgba(255, 255, 255, 0.95)",
-                              border: isMinted
-                                ? "3px solid #fda085"
-                                : `2px solid ${rarityColors.border}`,
-                              borderRadius: "16px",
-                              padding: "20px",
-                              boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-                              position: "relative",
-                              overflow: "hidden",
-                            }}
-                          >
-                            {isMinted && (
+                  {/* Minted NFTs Section */}
+                  {mintedNFTs.length > 0 && (
+                    <div>
+                      <h2
+                        style={{
+                          color: "#fff",
+                          fontSize: "28px",
+                          fontWeight: "700",
+                          marginBottom: "20px",
+                          textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
+                        🎨 Minted NFTs ({mintedNFTs.length})
+                      </h2>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(300px, 1fr))",
+                          gap: "20px",
+                        }}
+                      >
+                        {mintedNFTs.map((agent) => {
+                          return (
+                            <div
+                              key={agent.id}
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                                border: "3px solid #fda085",
+                                borderRadius: "16px",
+                                padding: "20px",
+                                boxShadow:
+                                  "0 8px 25px rgba(246, 211, 101, 0.4)",
+                                position: "relative",
+                              }}
+                            >
                               <div
                                 style={{
                                   position: "absolute",
                                   top: "10px",
                                   right: "10px",
-                                  background:
-                                    "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                                  color: "#fff",
-                                  padding: "4px 12px",
+                                  background: "rgba(255, 255, 255, 0.3)",
+                                  backdropFilter: "blur(10px)",
+                                  padding: "6px 14px",
                                   borderRadius: "20px",
                                   fontSize: "11px",
                                   fontWeight: "bold",
+                                  color: "#fff",
                                   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
                                 }}
                               >
-                                🎨 MINTED
+                                🎨 NFT
                               </div>
-                            )}
-                            <h3
-                              style={{
-                                margin: "0 0 10px 0",
-                                fontSize: "20px",
-                                fontWeight: "700",
-                                color: "#333",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              {agent.name}
-                              {agent.rareTrait && (
-                                <span
-                                  style={{
-                                    display: "inline-block",
-                                    padding: "4px 12px",
-                                    borderRadius: "20px",
-                                    fontSize: "11px",
-                                    fontWeight: "bold",
-                                    background:
-                                      "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                                    color: "#fff",
-                                    textTransform: "capitalize",
-                                    boxShadow:
-                                      "0 2px 8px rgba(246, 211, 101, 0.4)",
-                                  }}
-                                >
-                                  ✨ {agent.rareTrait.name} (+
-                                  {agent.rareTrait.powerBonus})
-                                </span>
-                              )}
-                            </h3>
-                            <div style={{ marginBottom: "15px" }}>
-                              {getRarityBadge(agent.rarity)}
-                              {agent.rarityPercent && (
-                                <span
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "10px",
-                                    padding: "4px 12px",
-                                    borderRadius: "20px",
-                                    fontSize: "14px",
-                                    fontWeight: "bold",
-                                    background: "rgba(0, 0, 0, 0.1)",
-                                    color: "#333",
-                                  }}
-                                >
-                                  {agent.rarityPercent.toFixed(2)}%
-                                </span>
-                              )}
-                            </div>
-                            <ul
-                              style={{
-                                listStyle: "none",
-                                padding: 0,
-                                margin: "0 0 15px 0",
-                              }}
-                            >
-                              {Object.entries(agent.traits).map(
-                                ([key, value]) => (
-                                  <li
-                                    key={key}
-                                    style={{
-                                      padding: "6px 0",
-                                      borderBottom:
-                                        "1px solid rgba(0, 0, 0, 0.1)",
-                                      color: "#666",
-                                      fontSize: "14px",
-                                    }}
-                                  >
-                                    <strong
-                                      style={{ textTransform: "capitalize" }}
-                                    >
-                                      {key}:
-                                    </strong>{" "}
-                                    {value}
-                                  </li>
-                                )
-                              )}
-                              <li
+                              <h3
                                 style={{
-                                  padding: "8px 0",
-                                  marginTop: "8px",
-                                  borderTop: "2px solid rgba(0, 0, 0, 0.1)",
-                                  color: "#333",
-                                  fontSize: "16px",
+                                  margin: "0 0 10px 0",
+                                  fontSize: "20px",
                                   fontWeight: "700",
-                                }}
-                              >
-                                ⚡ Power: {agent.power || calculatePower(agent)}
-                              </li>
-                              <li
-                                style={{
-                                  padding: "6px 0",
-                                  color: "#666",
-                                  fontSize: "14px",
-                                }}
-                              >
-                                ⭐ XP: {agent.xp || 0}
-                              </li>
-                              <li
-                                style={{
-                                  padding: "6px 0",
-                                  color: "#666",
-                                  fontSize: "14px",
-                                }}
-                              >
-                                ⚡ Energy: {agent.energy || 100}/100
-                                {!canBreed(agent) && (
-                                  <span
-                                    style={{
-                                      marginLeft: "8px",
-                                      padding: "2px 6px",
-                                      borderRadius: "8px",
-                                      fontSize: "11px",
-                                      background: "rgba(245, 87, 108, 0.2)",
-                                      color: "#f5576c",
-                                      fontWeight: "bold",
-                                    }}
-                                  >
-                                    Low Energy
-                                  </span>
-                                )}
-                              </li>
-                              <li
-                                style={{
-                                  padding: "8px 0",
-                                  marginTop: "4px",
-                                  color: "#333",
-                                  fontSize: "15px",
-                                  fontWeight: "700",
+                                  color: "#fff",
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: "8px",
+                                  gap: "10px",
+                                  flexWrap: "wrap",
                                 }}
                               >
-                                🧬 GENE: {agent.gene || 0}
-                                {(agent.gene || 0) >= 10 && (
+                                {agent.name}
+                                {agent.rareTrait && (
                                   <span
                                     style={{
-                                      padding: "2px 8px",
-                                      borderRadius: "8px",
-                                      fontSize: "10px",
-                                      background: "rgba(76, 175, 80, 0.3)",
-                                      color: "#4caf50",
+                                      display: "inline-block",
+                                      padding: "4px 12px",
+                                      borderRadius: "20px",
+                                      fontSize: "11px",
                                       fontWeight: "bold",
+                                      background: "rgba(255, 255, 255, 0.3)",
+                                      backdropFilter: "blur(10px)",
+                                      color: "#fff",
+                                      textTransform: "capitalize",
+                                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
                                     }}
                                   >
-                                    Reward Ready!
+                                    ✨ {agent.rareTrait.name} (+
+                                    {agent.rareTrait.powerBonus})
                                   </span>
                                 )}
-                              </li>
-                            </ul>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "10px",
-                                marginTop: "15px",
-                              }}
-                            >
-                              {/* Enhanced NFT Minting for Rare Traits */}
-                              {!isMinted && agent.rareTrait && (
-                                <button
-                                  onClick={() => mintNFT(agent)}
-                                  style={{
-                                    width: "100%",
-                                    padding: "14px",
-                                    fontSize: "15px",
-                                    fontWeight: "700",
-                                    color: "#fff",
-                                    background:
-                                      "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                                    border: "3px solid #fda085",
-                                    borderRadius: "12px",
-                                    cursor: "pointer",
-                                    boxShadow:
-                                      "0 6px 20px rgba(246, 211, 101, 0.5)",
-                                    transition: "all 0.3s ease",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "1px",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-3px) scale(1.02)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 8px 25px rgba(246, 211, 101, 0.6)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0) scale(1)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 6px 20px rgba(246, 211, 101, 0.5)";
-                                  }}
-                                >
-                                  ✨ Mint Rare NFT (
-                                  {agent.rarity === "rare" ? 20 : 10} coins)
-                                </button>
-                              )}
-                              {/* Regular NFT Minting */}
-                              {!isMinted && !agent.rareTrait && (
-                                <button
-                                  onClick={() => mintNFT(agent)}
-                                  style={{
-                                    width: "100%",
-                                    padding: "12px",
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                    color: "#fff",
-                                    background: rarityColors.bg,
-                                    border: "none",
-                                    borderRadius: "10px",
-                                    cursor: "pointer",
-                                    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
-                                    transition: "all 0.3s ease",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-2px)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 6px 20px rgba(0, 0, 0, 0.3)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 4px 15px rgba(0, 0, 0, 0.2)";
-                                  }}
-                                >
-                                  🎨 Mint NFT (
-                                  {agent.rarity === "rare"
-                                    ? 20
-                                    : agent.rarity === "uncommon"
-                                    ? 10
-                                    : 5}{" "}
-                                  coins)
-                                </button>
-                              )}
-                              {/* Buy Energy for Offspring */}
-                              {agent.energy < 100 && (
-                                <button
-                                  onClick={() => purchaseEnergy(agent, 20)}
-                                  style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    fontSize: "13px",
-                                    fontWeight: "600",
-                                    color: "#fff",
-                                    background:
-                                      "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                                    border: "none",
-                                    borderRadius: "10px",
-                                    cursor: "pointer",
-                                    boxShadow:
-                                      "0 2px 8px rgba(79, 172, 254, 0.3)",
-                                    transition: "all 0.2s ease",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-1px)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 4px 12px rgba(79, 172, 254, 0.4)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 2px 8px rgba(79, 172, 254, 0.3)";
-                                  }}
-                                >
-                                  ⚡ Buy Energy (+20) - 10 coins
-                                </button>
-                              )}
-                              <div
+                              </h3>
+                              <div style={{ marginBottom: "15px" }}>
+                                {getRarityBadge(agent.rarity)}
+                                {agent.rarityPercent && (
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      marginLeft: "10px",
+                                      padding: "4px 12px",
+                                      borderRadius: "20px",
+                                      fontSize: "14px",
+                                      fontWeight: "bold",
+                                      background: "rgba(255, 255, 255, 0.2)",
+                                      color: "#fff",
+                                    }}
+                                  >
+                                    {agent.rarityPercent.toFixed(2)}%
+                                  </span>
+                                )}
+                              </div>
+                              <ul
                                 style={{
-                                  display: "flex",
-                                  gap: "10px",
+                                  listStyle: "none",
+                                  padding: 0,
+                                  margin: 0,
                                 }}
                               >
-                                <button
-                                  onClick={() => updateAgent(agent.id)}
+                                {Object.entries(agent.traits).map(
+                                  ([key, value]) => (
+                                    <li
+                                      key={key}
+                                      style={{
+                                        padding: "6px 0",
+                                        borderBottom:
+                                          "1px solid rgba(255, 255, 255, 0.3)",
+                                        color: "#fff",
+                                        fontSize: "14px",
+                                      }}
+                                    >
+                                      <strong
+                                        style={{ textTransform: "capitalize" }}
+                                      >
+                                        {key}:
+                                      </strong>{" "}
+                                      {value}
+                                    </li>
+                                  )
+                                )}
+                                <li
                                   style={{
-                                    padding: "12px 16px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
+                                    padding: "8px 0",
+                                    marginTop: "8px",
+                                    borderTop:
+                                      "2px solid rgba(255, 255, 255, 0.3)",
                                     color: "#fff",
-                                    background:
-                                      "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                                    border: "none",
-                                    borderRadius: "10px",
-                                    cursor: "pointer",
-                                    boxShadow:
-                                      "0 2px 8px rgba(79, 172, 254, 0.3)",
-                                    transition: "all 0.2s ease",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-1px)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 4px 12px rgba(79, 172, 254, 0.4)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 2px 8px rgba(79, 172, 254, 0.3)";
+                                    fontSize: "16px",
+                                    fontWeight: "700",
                                   }}
                                 >
-                                  ✏️ +1 STR
-                                </button>
-                                <button
-                                  onClick={() => deleteAgent(agent.id)}
-                                  style={{
-                                    padding: "12px 16px",
-                                    fontSize: "12px",
-                                    fontWeight: "600",
-                                    color: "#fff",
-                                    background:
-                                      "linear-gradient(135deg, #f5576c 0%, #f093fb 100%)",
-                                    border: "none",
-                                    borderRadius: "10px",
-                                    cursor: "pointer",
-                                    boxShadow:
-                                      "0 2px 8px rgba(245, 87, 108, 0.3)",
-                                    transition: "all 0.2s ease",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-1px)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 4px 12px rgba(245, 87, 108, 0.4)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 2px 8px rgba(245, 87, 108, 0.3)";
-                                  }}
-                                >
-                                  ❌
-                                </button>
-                              </div>
+                                  ⚡ Power:{" "}
+                                  {agent.power || calculatePower(agent)}
+                                </li>
+                              </ul>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Minted NFTs Section */}
-                {mintedNFTs.length > 0 && (
-                  <div>
+                  {/* Mint History Section */}
+                  <div style={{ marginTop: "40px" }}>
                     <h2
                       style={{
                         color: "#fff",
@@ -3060,307 +3177,160 @@ function App() {
                         textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
                       }}
                     >
-                      🎨 Minted NFTs ({mintedNFTs.length})
+                      📜 Mint History
                     </h2>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(300px, 1fr))",
-                        gap: "20px",
-                      }}
-                    >
-                      {mintedNFTs.map((agent) => {
-                        return (
-                          <div
-                            key={agent.id}
-                            style={{
-                              background:
-                                "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
-                              border: "3px solid #fda085",
-                              borderRadius: "16px",
-                              padding: "20px",
-                              boxShadow: "0 8px 25px rgba(246, 211, 101, 0.4)",
-                              position: "relative",
-                            }}
-                          >
-                            <div
+                    {history.length === 0 ? (
+                      <div
+                        style={{
+                          padding: "40px",
+                          textAlign: "center",
+                          background: "rgba(255, 255, 255, 0.1)",
+                          backdropFilter: "blur(10px)",
+                          borderRadius: "16px",
+                          color: "#fff",
+                          fontSize: "18px",
+                        }}
+                      >
+                        No mints yet. Start breeding to see history!
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          background: "rgba(255, 255, 255, 0.95)",
+                          borderRadius: "16px",
+                          padding: "20px",
+                          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                          maxHeight: "600px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        <ul
+                          style={{ listStyle: "none", padding: 0, margin: 0 }}
+                        >
+                          {history.map((h, i) => (
+                            <li
+                              key={i}
                               style={{
-                                position: "absolute",
-                                top: "10px",
-                                right: "10px",
-                                background: "rgba(255, 255, 255, 0.3)",
-                                backdropFilter: "blur(10px)",
-                                padding: "6px 14px",
-                                borderRadius: "20px",
-                                fontSize: "11px",
-                                fontWeight: "bold",
-                                color: "#fff",
-                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                                padding: "15px 0",
+                                borderBottom:
+                                  i < history.length - 1
+                                    ? "1px solid rgba(0, 0, 0, 0.1)"
+                                    : "none",
                               }}
                             >
-                              🎨 NFT
-                            </div>
-                            <h3
-                              style={{
-                                margin: "0 0 10px 0",
-                                fontSize: "20px",
-                                fontWeight: "700",
-                                color: "#fff",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              {agent.name}
-                              {agent.rareTrait && (
-                                <span
-                                  style={{
-                                    display: "inline-block",
-                                    padding: "4px 12px",
-                                    borderRadius: "20px",
-                                    fontSize: "11px",
-                                    fontWeight: "bold",
-                                    background: "rgba(255, 255, 255, 0.3)",
-                                    backdropFilter: "blur(10px)",
-                                    color: "#fff",
-                                    textTransform: "capitalize",
-                                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-                                  }}
-                                >
-                                  ✨ {agent.rareTrait.name} (+
-                                  {agent.rareTrait.powerBonus})
-                                </span>
-                              )}
-                            </h3>
-                            <div style={{ marginBottom: "15px" }}>
-                              {getRarityBadge(agent.rarity)}
-                              {agent.rarityPercent && (
-                                <span
-                                  style={{
-                                    display: "inline-block",
-                                    marginLeft: "10px",
-                                    padding: "4px 12px",
-                                    borderRadius: "20px",
-                                    fontSize: "14px",
-                                    fontWeight: "bold",
-                                    background: "rgba(255, 255, 255, 0.2)",
-                                    color: "#fff",
-                                  }}
-                                >
-                                  {agent.rarityPercent.toFixed(2)}%
-                                </span>
-                              )}
-                            </div>
-                            <ul
-                              style={{
-                                listStyle: "none",
-                                padding: 0,
-                                margin: 0,
-                              }}
-                            >
-                              {Object.entries(agent.traits).map(
-                                ([key, value]) => (
-                                  <li
-                                    key={key}
-                                    style={{
-                                      padding: "6px 0",
-                                      borderBottom:
-                                        "1px solid rgba(255, 255, 255, 0.3)",
-                                      color: "#fff",
-                                      fontSize: "14px",
-                                    }}
-                                  >
-                                    <strong
-                                      style={{ textTransform: "capitalize" }}
-                                    >
-                                      {key}:
-                                    </strong>{" "}
-                                    {value}
-                                  </li>
-                                )
-                              )}
-                              <li
+                              <div
                                 style={{
-                                  padding: "8px 0",
-                                  marginTop: "8px",
-                                  borderTop:
-                                    "2px solid rgba(255, 255, 255, 0.3)",
-                                  color: "#fff",
-                                  fontSize: "16px",
-                                  fontWeight: "700",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                  marginBottom: "8px",
+                                  flexWrap: "wrap",
                                 }}
                               >
-                                ⚡ Power: {agent.power || calculatePower(agent)}
-                              </li>
-                            </ul>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Mint History Section */}
-                <div style={{ marginTop: "40px" }}>
-                  <h2
-                    style={{
-                      color: "#fff",
-                      fontSize: "28px",
-                      fontWeight: "700",
-                      marginBottom: "20px",
-                      textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                    }}
-                  >
-                    📜 Mint History
-                  </h2>
-                  {history.length === 0 ? (
-                    <div
-                      style={{
-                        padding: "40px",
-                        textAlign: "center",
-                        background: "rgba(255, 255, 255, 0.1)",
-                        backdropFilter: "blur(10px)",
-                        borderRadius: "16px",
-                        color: "#fff",
-                        fontSize: "18px",
-                      }}
-                    >
-                      No mints yet. Start breeding to see history!
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        background: "rgba(255, 255, 255, 0.95)",
-                        borderRadius: "16px",
-                        padding: "20px",
-                        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-                        maxHeight: "600px",
-                        overflowY: "auto",
-                      }}
-                    >
-                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                        {history.map((h, i) => (
-                          <li
-                            key={i}
-                            style={{
-                              padding: "15px 0",
-                              borderBottom:
-                                i < history.length - 1
-                                  ? "1px solid rgba(0, 0, 0, 0.1)"
-                                  : "none",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                marginBottom: "8px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              <strong
-                                style={{ color: "#333", fontSize: "16px" }}
-                              >
-                                ID: {h.offspringId}
-                              </strong>
-                              <span
-                                style={{
-                                  padding: "4px 10px",
-                                  borderRadius: "12px",
-                                  fontSize: "11px",
-                                  fontWeight: "bold",
-                                  textTransform: "uppercase",
-                                  background:
-                                    h.rarity === "rare"
-                                      ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                                      : h.rarity === "uncommon"
-                                      ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-                                      : "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                                  color: "#fff",
-                                }}
-                              >
-                                {h.rarity}
-                              </span>
-                              {h.rarityPercent && (
+                                <strong
+                                  style={{ color: "#333", fontSize: "16px" }}
+                                >
+                                  ID: {h.offspringId}
+                                </strong>
                                 <span
                                   style={{
                                     padding: "4px 10px",
                                     borderRadius: "12px",
-                                    fontSize: "12px",
+                                    fontSize: "11px",
                                     fontWeight: "bold",
-                                    background: "rgba(0, 0, 0, 0.1)",
-                                    color: "#333",
+                                    textTransform: "uppercase",
+                                    background:
+                                      h.rarity === "rare"
+                                        ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                                        : h.rarity === "uncommon"
+                                        ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                                        : "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                                    color: "#fff",
                                   }}
                                 >
-                                  {h.rarityPercent.toFixed(2)}%
+                                  {h.rarity}
                                 </span>
-                              )}
-                              <span style={{ color: "#666", fontSize: "14px" }}>
-                                {new Date(h.timestamp).toLocaleString()}
-                              </span>
-                            </div>
-                            <div
-                              style={{
-                                color: "#666",
-                                fontSize: "14px",
-                                marginBottom: "5px",
-                              }}
-                            >
-                              👤 Wallet:{" "}
-                              <code
+                                {h.rarityPercent && (
+                                  <span
+                                    style={{
+                                      padding: "4px 10px",
+                                      borderRadius: "12px",
+                                      fontSize: "12px",
+                                      fontWeight: "bold",
+                                      background: "rgba(0, 0, 0, 0.1)",
+                                      color: "#333",
+                                    }}
+                                  >
+                                    {h.rarityPercent.toFixed(2)}%
+                                  </span>
+                                )}
+                                <span
+                                  style={{ color: "#666", fontSize: "14px" }}
+                                >
+                                  {new Date(h.timestamp).toLocaleString()}
+                                </span>
+                              </div>
+                              <div
                                 style={{
-                                  background: "rgba(0, 0, 0, 0.05)",
-                                  padding: "2px 6px",
-                                  borderRadius: "4px",
-                                  fontFamily: "monospace",
+                                  color: "#666",
+                                  fontSize: "14px",
+                                  marginBottom: "5px",
                                 }}
                               >
-                                {h.wallet === "no-wallet"
-                                  ? "No wallet connected"
-                                  : `${h.wallet.slice(0, 6)}...${h.wallet.slice(
-                                      -4
-                                    )}`}
-                              </code>
-                            </div>
-                            <div
-                              style={{
-                                color: "#666",
-                                fontSize: "14px",
-                                marginBottom: "5px",
-                              }}
-                            >
-                              👨‍👩‍👧 Parents: <strong>{h.agentA}</strong> +{" "}
-                              <strong>{h.agentB}</strong>
-                            </div>
-                            <div style={{ color: "#666", fontSize: "14px" }}>
-                              🔗 TX:{" "}
-                              <code
+                                👤 Wallet:{" "}
+                                <code
+                                  style={{
+                                    background: "rgba(0, 0, 0, 0.05)",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    fontFamily: "monospace",
+                                  }}
+                                >
+                                  {h.wallet === "no-wallet"
+                                    ? "No wallet connected"
+                                    : `${h.wallet.slice(
+                                        0,
+                                        6
+                                      )}...${h.wallet.slice(-4)}`}
+                                </code>
+                              </div>
+                              <div
                                 style={{
-                                  background: "rgba(0, 0, 0, 0.05)",
-                                  padding: "2px 6px",
-                                  borderRadius: "4px",
-                                  fontFamily: "monospace",
-                                  fontSize: "12px",
+                                  color: "#666",
+                                  fontSize: "14px",
+                                  marginBottom: "5px",
                                 }}
                               >
-                                {h.tx.slice(0, 12)}...
-                              </code>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                                👨‍👩‍👧 Parents: <strong>{h.agentA}</strong> +{" "}
+                                <strong>{h.agentB}</strong>
+                              </div>
+                              <div style={{ color: "#666", fontSize: "14px" }}>
+                                🔗 TX:{" "}
+                                <code
+                                  style={{
+                                    background: "rgba(0, 0, 0, 0.05)",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    fontFamily: "monospace",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  {h.tx.slice(0, 12)}...
+                                </code>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          }
-        />
-      </Routes>
-    </>
+            }
+          />
+        </Routes>
+      </main>
+    </div>
   );
 }
 

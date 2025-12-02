@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { purchaseAgent } from "../api/backend";
+import { formatAgentName } from "../utils/nameUtils";
 import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
 import Notification from "../components/Notification";
@@ -215,7 +216,9 @@ function Marketplace() {
                     <div className="agent-avatar">
                       {agent.name?.charAt(0).toUpperCase() || "?"}
                     </div>
-                    <div className="agent-name">{agent.name || "Unnamed"}</div>
+                    <div className="agent-name" title={agent.name || "Unnamed"}>
+                      {formatAgentName(agent.name || "Unnamed")}
+                    </div>
                     {agent.forSale && (
                       <div className="for-sale-badge">
                         💰 {agent.price} Coins

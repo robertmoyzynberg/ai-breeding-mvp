@@ -1,0 +1,575 @@
+/* ============================================
+   SLEEK MODERN CARD DESIGN SYSTEM
+   ============================================ */
+
+/* Base Card Styles - Modern & Sleek */
+.agent-card,
+.agent-select-card,
+.agent-item-card {
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  cursor: pointer !important;
+  min-height: 480px !important;
+}
+
+.agent-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.agent-card:hover::before {
+  opacity: 1;
+}
+
+.agent-card:hover,
+.agent-select-card:hover,
+.agent-item-card:hover {
+  transform: translateY(-8px) !important;
+  box-shadow: 
+    0 12px 32px rgba(102, 126, 234, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  border: none !important;
+}
+
+/* Card Header - Sleek & Modern */
+.agent-card-header {
+  padding: 28px 24px 24px 24px !important;
+  background: linear-gradient(180deg, rgba(102, 126, 234, 0.04) 0%, transparent 100%) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  position: relative !important;
+  min-height: 160px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Agent Avatar - Modern & Bold */
+.agent-avatar {
+  width: 88px !important;
+  height: 88px !important;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  margin-bottom: 16px !important;
+  box-shadow: 
+    0 8px 24px rgba(102, 126, 234, 0.25),
+    0 2px 8px rgba(102, 126, 234, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.agent-avatar::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: rotate(45deg);
+  transition: all 0.6s;
+}
+
+.agent-card:hover .agent-avatar {
+  transform: scale(1.08) rotate(2deg) !important;
+  box-shadow: 
+    0 12px 32px rgba(102, 126, 234, 0.35),
+    0 4px 12px rgba(102, 126, 234, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.agent-card:hover .agent-avatar::after {
+  left: 100%;
+}
+
+/* Agent Name - Clean Typography */
+.agent-name {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #1a1a2e !important;
+  margin: 0 0 8px 0 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto !important;
+  line-height: 1.3 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  min-height: 2.6em !important;
+  padding: 0 12px !important;
+  box-sizing: border-box !important;
+  letter-spacing: -0.3px !important;
+}
+
+/* Rare Trait Badge - Modern Badge */
+.rare-trait-badge {
+  display: inline-block !important;
+  padding: 6px 14px !important;
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
+  color: #1a1a2e !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: capitalize !important;
+  box-shadow: 0 2px 8px rgba(246, 211, 101, 0.3) !important;
+  margin-top: 8px !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* For Sale Badge - Eye-catching */
+.for-sale-badge {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
+  color: #1a1a2e !important;
+  padding: 8px 14px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  box-shadow: 
+    0 4px 12px rgba(246, 211, 101, 0.4),
+    0 0 0 2px rgba(255, 255, 255, 0.8) !important;
+  z-index: 2 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Card Body - Clean Layout */
+.agent-card-body {
+  padding: 24px !important;
+  flex-grow: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  background: #ffffff !important;
+}
+
+/* Stats Grid - Modern Grid */
+.agent-stats,
+.agent-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+  margin-bottom: 0 !important;
+}
+
+.stat-item {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+  border-radius: 14px !important;
+  padding: 16px 12px !important;
+  text-align: center !important;
+  border: 1px solid rgba(102, 126, 234, 0.1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.stat-item:hover::before {
+  transform: scaleX(1);
+}
+
+.stat-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%) !important;
+  transform: translateY(-2px) !important;
+  border-color: rgba(102, 126, 234, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1) !important;
+}
+
+.stat-label {
+  display: block !important;
+  font-size: 10px !important;
+  color: #666 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  margin-bottom: 8px !important;
+  font-weight: 700 !important;
+}
+
+.stat-value {
+  display: block !important;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  color: #1a1a2e !important;
+  line-height: 1 !important;
+  letter-spacing: -0.5px !important;
+}
+
+/* Traits Row - Compact Design */
+.traits-row {
+  display: flex !important;
+  gap: 8px !important;
+  margin-bottom: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.trait-item {
+  flex: 1 !important;
+  min-width: 80px !important;
+  padding: 10px 12px !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(118, 75, 162, 0.06) 100%) !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #1a1a2e !important;
+  text-align: center !important;
+  border: 1px solid rgba(102, 126, 234, 0.12) !important;
+  transition: all 0.2s ease !important;
+}
+
+.trait-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%) !important;
+  border-color: rgba(102, 126, 234, 0.25) !important;
+}
+
+/* Power Row - Highlighted */
+.power-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
+  border-radius: 14px !important;
+  margin-bottom: 12px !important;
+  border: 1px solid rgba(102, 126, 234, 0.15) !important;
+}
+
+.power-value {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #667eea !important;
+  letter-spacing: -0.5px !important;
+}
+
+/* Meta Row - Clean Separator */
+.meta-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 16px 0 !important;
+  font-size: 13px !important;
+  color: #666 !important;
+  font-weight: 600 !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Agent Meta Info - Modern Section */
+.agent-meta {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 20px !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.04) 0%, rgba(118, 75, 162, 0.04) 100%) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 14px !important;
+  margin-bottom: 16px !important;
+}
+
+.meta-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.meta-label {
+  font-size: 10px !important;
+  color: #888 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  font-weight: 700 !important;
+}
+
+.meta-value {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: #1a1a2e !important;
+  letter-spacing: -0.3px !important;
+}
+
+/* Energy Bar - Modern Progress */
+.energy-bar-container {
+  margin-top: 8px !important;
+}
+
+.energy-label {
+  font-size: 11px !important;
+  color: #666 !important;
+  margin-bottom: 8px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.energy-bar {
+  width: 100% !important;
+  height: 10px !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  border: none !important;
+}
+
+.energy-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #4ecdc4 0%, #44a08d 100%) !important;
+  border-radius: 10px !important;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 8px rgba(78, 205, 196, 0.4) !important;
+  position: relative !important;
+}
+
+.energy-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Card Footer - Clean Bottom */
+.agent-card-footer {
+  padding: 20px 24px !important;
+  background: linear-gradient(180deg, rgba(248, 249, 250, 0.8) 0%, #ffffff 100%) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* Card Buttons - Modern & Sleek */
+.select-button,
+.view-button,
+.buy-button,
+.action-button {
+  width: 100% !important;
+  padding: 14px 24px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.select-button::before,
+.view-button::before,
+.buy-button::before,
+.action-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.select-button:hover::before,
+.view-button:hover::before,
+.buy-button:hover::before,
+.action-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.select-button:hover,
+.view-button:hover,
+.buy-button:hover:not(:disabled),
+.action-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 
+    0 8px 20px rgba(102, 126, 234, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+}
+
+.select-button:active,
+.view-button:active,
+.buy-button:active:not(:disabled),
+.action-button:active {
+  transform: translateY(0) !important;
+}
+
+.buy-button {
+  background: linear-gradient(135deg, #4caf50 0%, #8bc34a 100%) !important;
+  box-shadow: 
+    0 4px 12px rgba(76, 175, 80, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.buy-button:hover:not(:disabled) {
+  box-shadow: 
+    0 8px 20px rgba(76, 175, 80, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  background: linear-gradient(135deg, #8bc34a 0%, #4caf50 100%) !important;
+}
+
+.buy-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: #e0e0e0 !important;
+  box-shadow: none !important;
+}
+
+/* Rarity Badge */
+.rarity-badge {
+  display: inline-block !important;
+  padding: 4px 10px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Grid Layouts */
+.agents-grid,
+.agent-selector-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  gap: 24px !important;
+  margin-bottom: 40px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .agents-grid,
+  .agent-selector-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .agent-card-header {
+    padding: 24px 20px 20px 20px !important;
+    min-height: 140px !important;
+  }
+
+  .agent-avatar {
+    width: 72px !important;
+    height: 72px !important;
+    font-size: 28px !important;
+  }
+
+  .agent-name {
+    font-size: 18px !important;
+  }
+
+  .agent-stats,
+  .agent-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* Special Card Variants */
+.agent-item-card {
+  flex-direction: row !important;
+  align-items: center !important;
+  padding: 20px !important;
+  gap: 20px !important;
+  min-height: auto !important;
+}
+
+.agent-item-card .agent-avatar {
+  width: 64px !important;
+  height: 64px !important;
+  font-size: 24px !important;
+  margin-bottom: 0 !important;
+  flex-shrink: 0 !important;
+  border-radius: 16px !important;
+}
+
+.agent-item-card .agent-name {
+  font-size: 18px !important;
+  -webkit-line-clamp: 1 !important;
+  min-height: auto !important;
+}
+
+/* Card Loading State */
+.agent-card.loading {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+}
+
+.agent-card.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* Marketplace-specific border top color */
+.marketplace-page .agent-card-header {
+  border-top: 4px solid !important;
+}

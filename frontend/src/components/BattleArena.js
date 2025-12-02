@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatAgentName } from "../utils/nameUtils";
 import "./BattleArena.css";
 
 function BattleArena({ battleResult = null, onBattleComplete }) {
@@ -58,7 +59,7 @@ function BattleArena({ battleResult = null, onBattleComplete }) {
         <h2>⚔️ Battle Arena</h2>
         {battlePhase === "fighting" && <div className="battle-status">FIGHTING...</div>}
         {battlePhase === "result" && winner && (
-          <div className="battle-status winner">🏆 {winner.name} WINS!</div>
+          <div className="battle-status winner">🏆 {formatAgentName(winner.name)} WINS!</div>
         )}
       </div>
 
@@ -71,7 +72,9 @@ function BattleArena({ battleResult = null, onBattleComplete }) {
                 {fighter1?.name?.charAt(0)?.toUpperCase() || "A"}
               </div>
             </div>
-            <h3 className="fighter-name">{fighter1?.name || "Agent A"}</h3>
+            <h3 className="fighter-name" title={fighter1?.name || "Agent A"}>
+              {formatAgentName(fighter1?.name || "Agent A")}
+            </h3>
             
             {/* Health Bar */}
             <div className="stat-bar-container">
@@ -143,7 +146,9 @@ function BattleArena({ battleResult = null, onBattleComplete }) {
                 {fighter2?.name?.charAt(0)?.toUpperCase() || "B"}
               </div>
             </div>
-            <h3 className="fighter-name">{fighter2?.name || "Agent B"}</h3>
+            <h3 className="fighter-name" title={fighter2?.name || "Agent B"}>
+              {formatAgentName(fighter2?.name || "Agent B")}
+            </h3>
             
             {/* Health Bar */}
             <div className="stat-bar-container">
@@ -207,7 +212,7 @@ function BattleArena({ battleResult = null, onBattleComplete }) {
       {battlePhase === "result" && winner && (
         <div className="battle-summary">
           <div className="summary-card winner-card">
-            <h3>🏆 Winner: {winner.name}</h3>
+            <h3>🏆 Winner: {formatAgentName(winner.name)}</h3>
             <div className="summary-stats">
               <p>Power: {winner.power}</p>
               <p>XP Gained: +{winner === fighter1 ? xpGainA : xpGainB}</p>
@@ -216,7 +221,7 @@ function BattleArena({ battleResult = null, onBattleComplete }) {
           </div>
           {loser && (
             <div className="summary-card loser-card">
-              <h3>💔 Loser: {loser.name}</h3>
+              <h3>💔 Loser: {formatAgentName(loser.name)}</h3>
               <div className="summary-stats">
                 <p>Power: {loser.power}</p>
                 <p>XP Gained: +{loser === fighter1 ? xpGainA : xpGainB}</p>

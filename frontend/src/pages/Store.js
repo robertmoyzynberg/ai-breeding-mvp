@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { createPaymentIntent, confirmPayment, getPaymentHistory, refillEnergy, applyXPBoost, rollRareTrait } from "../api/backend";
+import { createCheckoutSession, verifyPaymentSuccess, getPaymentHistory, refillEnergy, applyXPBoost, rollRareTrait } from "../api/backend";
 import { getAgents } from "../api/backend";
 import Loader from "../components/Loader";
 import Notification from "../components/Notification";
@@ -41,48 +41,35 @@ function Store() {
 
     setProcessing(true);
     try {
-      console.log("[Store] Processing purchase:", { coinAmount, price, username });
-
-      // Step 1: Create payment intent
-      const paymentData = await createPaymentIntent({
+      // Create Stripe checkout session
+      const sessionData = await createCheckoutSession({
         userId: username,
         amount: price,
         currency: "USD",
-        paymentMethod: "stripe", // Can be changed to 'coinbase', 'metamask', etc.
       });
 
-      console.log("[Store] Payment intent created:", paymentData);
+      // If mock payment (Stripe not configured), handle directly
+      if (sessionData.mock) {
+        // For mock payments, simulate success
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await refreshBalance();
+        await loadPaymentHistory();
+        navigate("/payment/success");
+        return;
+      }
 
-      // Step 2: Simulate payment confirmation (in production, this would be handled by payment provider)
-      // TODO: Replace with actual payment provider integration
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate payment processing
-
-      // Step 3: Confirm payment and add coins
-      const result = await confirmPayment({
-        paymentId: paymentData.paymentId,
-        transactionId: paymentData.paymentIntent.id,
-        userId: username,
-        coins: coinAmount,
-      });
-
-      console.log("[Store] Payment confirmed:", result);
-
-      // Update global state
-      updateCoins(result.coins);
-      await refreshBalance();
-
-      // Reload payment history
-      await loadPaymentHistory();
-
-      // Redirect to success page
-      navigate("/payment/success");
+      // Redirect to Stripe Checkout
+      if (sessionData.url) {
+        window.location.href = sessionData.url;
+      } else {
+        throw new Error("No checkout URL received");
+      }
     } catch (error) {
       console.error("[Store] Payment error:", error);
       showNotification(
         `Payment failed: ${error.message}`,
         "error"
       );
-    } finally {
       setProcessing(false);
     }
   };
@@ -182,12 +169,14 @@ function Store() {
 
       <div className="store-header">
         <button className="back-button" onClick={() => navigate("/dashboard")}>
-          ← Back
+          ← Back to Dashboard
         </button>
-        <h1>💰 Store</h1>
-        <div className="balance-display">
-          <span className="balance-label">Your Balance:</span>
-          <span className="balance-amount">{coins} Coins</span>
+        <div className="store-header-content">
+          <h1>💰 Store</h1>
+          <div className="balance-display">
+            <span className="balance-label">Your Balance:</span>
+            <span className="balance-amount">{coins} Coins</span>
+          </div>
         </div>
       </div>
 
