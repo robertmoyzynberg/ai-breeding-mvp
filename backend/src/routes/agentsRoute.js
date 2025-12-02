@@ -184,6 +184,9 @@ router.put('/:id', (req, res) => {
 
 // POST /agents - Create new agent
 router.post('/', (req, res) => {
+  const startTime = Date.now();
+  console.log(`[Agents] ${new Date().toISOString()} - Create agent request:`, { name: req.body.name, owner: req.body.owner });
+  
   try {
     const { name, owner, traits, energy, xp, gene, rarity, rareTrait, power } = req.body;
     
@@ -217,10 +220,24 @@ router.post('/', (req, res) => {
       price: newAgent.price || 0
     };
     
+    const duration = Date.now() - startTime;
+    console.log(`[Agents] ${new Date().toISOString()} - Agent created:`, {
+      agentId: parsedAgent.id,
+      name: parsedAgent.name,
+      owner: parsedAgent.owner,
+      rarity: parsedAgent.rarity,
+      duration: `${duration}ms`
+    });
+    
     res.status(201).json(parsedAgent);
   } catch (error) {
-    console.error('Error creating agent:', error);
-    res.status(500).json({ error: 'Failed to create agent' });
+    const duration = Date.now() - startTime;
+    console.error(`[Agents] ${new Date().toISOString()} - Agent creation failed:`, {
+      error: error.message,
+      stack: error.stack,
+      duration: `${duration}ms`
+    });
+    res.status(500).json({ error: 'Failed to create agent', message: error.message });
   }
 });
 
@@ -443,6 +460,8 @@ router.post('/:id/rare-trait-roll', (req, res) => {
 
 // POST /agents/:id/list-for-sale - Mark agent as for sale
 router.post('/:id/list-for-sale', (req, res) => {
+  console.log(`[Marketplace] ${new Date().toISOString()} - List for sale:`, { agentId: req.params.id, userId: req.body.userId, price: req.body.price });
+  
   try {
     const { id } = req.params;
     const { userId, price } = req.body;
@@ -481,14 +500,20 @@ router.post('/:id/list-for-sale', (req, res) => {
       forSale: updatedAgent.forSale === 1
     };
     
+    console.log(`[Marketplace] ${new Date().toISOString()} - Agent listed successfully:`, { agentId: id, price });
+    
     res.json({
       success: true,
       agent: parsedAgent,
       message: 'Agent listed for sale!'
     });
   } catch (error) {
-    console.error('Error listing agent for sale:', error);
-    res.status(500).json({ error: 'Failed to list agent for sale' });
+    console.error(`[Marketplace] ${new Date().toISOString()} - List for sale failed:`, {
+      agentId: req.params.id,
+      error: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ error: 'Failed to list agent for sale', message: error.message });
   }
 });
 
@@ -541,6 +566,8 @@ router.post('/:id/remove-from-sale', (req, res) => {
 
 // POST /agents/:id/purchase - Purchase an agent
 router.post('/:id/purchase', (req, res) => {
+  console.log(`[Marketplace] ${new Date().toISOString()} - Purchase request:`, { agentId: req.params.id, buyerId: req.body.buyerId });
+  
   try {
     const { id } = req.params;
     const { buyerId } = req.body;
@@ -626,6 +653,14 @@ router.post('/:id/purchase', (req, res) => {
     
     const newBuyerBalance = db.prepare('SELECT * FROM user_balance WHERE user_id = ?').get(buyerId);
     
+    console.log(`[Marketplace] ${new Date().toISOString()} - Purchase completed:`, {
+      agentId: id,
+      buyerId,
+      sellerId,
+      price,
+      buyerNewBalance: newBuyerBalance?.coins || 0
+    });
+    
     res.json({
       success: true,
       agent: parsedAgent,
@@ -633,8 +668,13 @@ router.post('/:id/purchase', (req, res) => {
       message: `Successfully purchased ${agent.name} for ${price} coins!`
     });
   } catch (error) {
-    console.error('Error purchasing agent:', error);
-    res.status(500).json({ error: 'Failed to purchase agent' });
+    console.error(`[Marketplace] ${new Date().toISOString()} - Purchase failed:`, {
+      agentId: req.params.id,
+      buyerId: req.body.buyerId,
+      error: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ error: 'Failed to purchase agent', message: error.message });
   }
 });
 

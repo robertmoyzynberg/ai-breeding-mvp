@@ -85,7 +85,20 @@ function Marketplace() {
       return;
     }
 
-    if (purchasing) return;
+    if (purchasing) {
+      showNotification("Purchase already in progress", "error");
+      return;
+    }
+
+    if (!agent.forSale) {
+      showNotification("This agent is not for sale", "error");
+      return;
+    }
+
+    if (agent.owner === username) {
+      showNotification("You cannot purchase your own agent", "error");
+      return;
+    }
 
     if (coins < (agent.price || 0)) {
       showNotification(`Insufficient coins. Need ${agent.price} coins.`, "error");

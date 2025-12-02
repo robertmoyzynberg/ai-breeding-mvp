@@ -20,6 +20,9 @@ try {
 
 // POST /api/breed - Breed two agents
 router.post('/', (req, res) => {
+  const startTime = Date.now();
+  console.log(`[Breed] ${new Date().toISOString()} - Breeding request:`, { parent1Id: req.body.parent1Id, parent2Id: req.body.parent2Id });
+  
   try {
     const { parent1Id, parent2Id } = req.body;
     
@@ -127,9 +130,23 @@ router.post('/', (req, res) => {
       rareTrait: baby.rareTrait ? JSON.parse(baby.rareTrait) : null
     };
     
+    const duration = Date.now() - startTime;
+    console.log(`[Breed] ${new Date().toISOString()} - Breeding completed:`, {
+      babyId: parsedBaby.id,
+      babyName: parsedBaby.name,
+      rarity: parsedBaby.rarity,
+      hasRareTrait: !!parsedBaby.rareTrait,
+      duration: `${duration}ms`
+    });
+    
     res.json(parsedBaby);
   } catch (error) {
-    console.error('Breed route error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[Breed] ${new Date().toISOString()} - Breeding failed:`, {
+      error: error.message,
+      stack: error.stack,
+      duration: `${duration}ms`
+    });
     res.status(500).json({ 
       error: 'Breeding failed', 
       message: error.message 

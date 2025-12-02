@@ -86,6 +86,9 @@ const COIN_PACKAGES = {
 
 // POST /api/payment/create-checkout-session - Create Stripe Checkout Session
 router.post('/create-checkout-session', async (req, res) => {
+  const startTime = Date.now();
+  console.log(`[Payment] ${new Date().toISOString()} - Create checkout session:`, { userId: req.body.userId, amount: req.body.amount });
+  
   try {
     const { userId, amount, currency = 'USD' } = req.body;
     
@@ -104,13 +107,20 @@ router.post('/create-checkout-session', async (req, res) => {
     
     if (!isStripeConfigured) {
       // Fallback to mock payment for development
-      console.log('[Payment] Stripe not configured, using mock payment');
+      console.log(`[Payment] ${new Date().toISOString()} - Stripe not configured, using mock payment`);
       const result = db.prepare(`
         INSERT INTO payments (user_id, amount, currency, status, payment_method, coins)
         VALUES (?, ?, ?, ?, ?, ?)
       `).run(userId, amount, currency, 'pending', 'mock', coins);
       
       const payment = db.prepare('SELECT * FROM payments WHERE id = ?').get(result.lastInsertRowid);
+      
+      console.log(`[Payment] ${new Date().toISOString()} - Mock payment created:`, {
+        paymentId: payment.id,
+        userId,
+        amount,
+        coins
+      });
       
       return res.json({
         sessionId: `mock_session_${payment.id}`,
@@ -153,6 +163,16 @@ router.post('/create-checkout-session', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(userId, amount, currency, 'pending', 'stripe', session.id, coins);
 
+    const duration = Date.now() - startTime;
+    console.log(`[Payment] ${new Date().toISOString()} - Stripe checkout session created:`, {
+      sessionId: session.id,
+      paymentId: result.lastInsertRowid,
+      userId,
+      amount,
+      coins,
+      duration: `${duration}ms`
+    });
+
     res.json({
       sessionId: session.id,
       url: session.url,
@@ -160,7 +180,14 @@ router.post('/create-checkout-session', async (req, res) => {
       coins: coins,
     });
   } catch (error) {
-    console.error('[Payment] Error creating checkout session:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[Payment] ${new Date().toISOString()} - Checkout session creation failed:`, {
+      userId: req.body.userId,
+      amount: req.body.amount,
+      error: error.message,
+      stack: error.stack,
+      duration: `${duration}ms`
+    });
     res.status(500).json({ 
       error: 'Failed to create checkout session', 
       message: error.message 
@@ -213,6 +240,12 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 // Handle successful checkout
 async function handleCheckoutSuccess(session) {
+  console.log(`[Payment] ${new Date().toISOString()} - Webhook: checkout.session.completed:`, {
+    sessionId: session.id,
+    userId: session.metadata?.userId,
+    coins: session.metadata?.coins
+  });
+  
   try {
     const { userId, coins, amount } = session.metadata;
     const coinsAmount = parseInt(coins) || 0;
@@ -248,15 +281,26 @@ async function handleCheckoutSuccess(session) {
         `).run(userId, coinsAmount);
       }
 
-      console.log(`[Payment] Checkout completed: ${coinsAmount} coins added to user ${userId}`);
+      console.log(`[Payment] ${new Date().toISOString()} - Checkout completed: ${coinsAmount} coins added to user ${userId}`);
+    } else {
+      console.warn(`[Payment] ${new Date().toISOString()} - Payment record not found for session:`, session.id);
     }
   } catch (error) {
-    console.error('[Payment] Error handling checkout success:', error);
+    console.error(`[Payment] ${new Date().toISOString()} - Error handling checkout success:`, {
+      sessionId: session.id,
+      error: error.message,
+      stack: error.stack
+    });
   }
 }
 
 // Handle successful payment intent
 async function handlePaymentIntentSuccess(paymentIntent) {
+  console.log(`[Payment] ${new Date().toISOString()} - Webhook: payment_intent.succeeded:`, {
+    paymentIntentId: paymentIntent.id,
+    amount: paymentIntent.amount
+  });
+  
   try {
     const payment = db.prepare(`
       SELECT * FROM payments WHERE stripe_payment_intent_id = ?
@@ -287,15 +331,27 @@ async function handlePaymentIntentSuccess(paymentIntent) {
         `).run(payment.user_id, payment.coins);
       }
 
-      console.log(`[Payment] Payment intent succeeded: ${payment.coins} coins added to user ${payment.user_id}`);
+      console.log(`[Payment] ${new Date().toISOString()} - Payment intent succeeded: ${payment.coins} coins added to user ${payment.user_id}`);
+    } else {
+      console.warn(`[Payment] ${new Date().toISOString()} - Payment record not found for payment intent:`, paymentIntent.id);
     }
   } catch (error) {
-    console.error('[Payment] Error handling payment intent success:', error);
+    console.error(`[Payment] ${new Date().toISOString()} - Error handling payment intent success:`, {
+      paymentIntentId: paymentIntent.id,
+      error: error.message,
+      stack: error.stack
+    });
   }
 }
 
 // Handle payment failure
 async function handlePaymentFailure(paymentIntent) {
+  console.log(`[Payment] ${new Date().toISOString()} - Webhook: payment_intent.payment_failed:`, {
+    paymentIntentId: paymentIntent.id,
+    failureCode: paymentIntent.failure_code,
+    failureMessage: paymentIntent.failure_message
+  });
+  
   try {
     const payment = db.prepare(`
       SELECT * FROM payments WHERE stripe_payment_intent_id = ?
@@ -308,10 +364,20 @@ async function handlePaymentFailure(paymentIntent) {
         WHERE id = ?
       `).run('failed', payment.id);
 
-      console.log(`[Payment] Payment failed for payment ID: ${payment.id}`);
+      console.log(`[Payment] ${new Date().toISOString()} - Payment marked as failed:`, {
+        paymentId: payment.id,
+        userId: payment.user_id,
+        amount: payment.amount
+      });
+    } else {
+      console.warn(`[Payment] ${new Date().toISOString()} - Payment record not found for failed payment intent:`, paymentIntent.id);
     }
   } catch (error) {
-    console.error('[Payment] Error handling payment failure:', error);
+    console.error(`[Payment] ${new Date().toISOString()} - Error handling payment failure:`, {
+      paymentIntentId: paymentIntent.id,
+      error: error.message,
+      stack: error.stack
+    });
   }
 }
 

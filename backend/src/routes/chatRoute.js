@@ -85,6 +85,9 @@ router.get('/:agentId', (req, res) => {
 
 // POST /api/chat - Send a message and get AI response
 router.post('/', async (req, res) => {
+  const startTime = Date.now();
+  console.log(`[Chat] ${new Date().toISOString()} - Chat message:`, { agentId: req.body.agentId, messageLength: req.body.message?.length });
+  
   try {
     const { agentId, message } = req.body;
     
@@ -174,12 +177,26 @@ Respond in character based on these stats.`;
       VALUES (?, ?, ?)
     `).run(agentId, 'assistant', aiResponse);
     
+    const duration = Date.now() - startTime;
+    console.log(`[Chat] ${new Date().toISOString()} - Chat response generated:`, {
+      agentId,
+      responseLength: aiResponse.length,
+      usedOpenAI: !!openai && !aiResponse.includes('mock'),
+      duration: `${duration}ms`
+    });
+    
     res.json({
       role: 'assistant',
       content: aiResponse
     });
   } catch (error) {
-    console.error('Chat route error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[Chat] ${new Date().toISOString()} - Chat failed:`, {
+      agentId: req.body.agentId,
+      error: error.message,
+      stack: error.stack,
+      duration: `${duration}ms`
+    });
     res.status(500).json({ 
       error: 'Chat failed', 
       message: error.message 

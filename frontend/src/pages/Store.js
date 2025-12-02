@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { createCheckoutSession, verifyPaymentSuccess, getPaymentHistory, refillEnergy, applyXPBoost, rollRareTrait } from "../api/backend";
+import { createCheckoutSession, verifyPaymentSuccess, confirmPayment, getPaymentHistory, refillEnergy, applyXPBoost, rollRareTrait } from "../api/backend";
 import { getAgents } from "../api/backend";
 import Loader from "../components/Loader";
 import Notification from "../components/Notification";
@@ -50,10 +50,23 @@ function Store() {
 
       // If mock payment (Stripe not configured), handle directly
       if (sessionData.mock) {
-        // For mock payments, simulate success
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Use coins from backend response (it calculates based on price)
+        const coinsToAdd = sessionData.coins || coinAmount;
+        
+        // For mock payments, confirm payment and add coins
+        const confirmResult = await confirmPayment({
+          paymentId: sessionData.paymentId,
+          transactionId: sessionData.sessionId,
+          userId: username,
+          coins: coinsToAdd,
+        });
+        
+        // Update global state
+        updateCoins(confirmResult.coins);
         await refreshBalance();
         await loadPaymentHistory();
+        
+        showNotification(`Successfully purchased ${coinsToAdd} coins!`, "success");
         navigate("/payment/success");
         return;
       }

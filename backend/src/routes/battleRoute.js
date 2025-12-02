@@ -29,10 +29,8 @@ try {
 
 // POST /api/battle - Battle two agents
 router.post('/', async (req, res) => {
-  console.log('=== BATTLE ROUTE HIT ===');
-  console.log('Request body:', req.body);
-  console.log('Request method:', req.method);
-  console.log('Request path:', req.path);
+  const startTime = Date.now();
+  console.log(`[Battle] ${new Date().toISOString()} - Battle request:`, { agentA: req.body.agentA, agentB: req.body.agentB });
   
   try {
     const { agentA, agentB } = req.body;
@@ -153,6 +151,15 @@ router.post('/', async (req, res) => {
     awardCoins(winnerOwner, 5);
     awardCoins(loserOwner, 1);
     
+    const duration = Date.now() - startTime;
+    console.log(`[Battle] ${new Date().toISOString()} - Battle completed:`, {
+      winner: winner.id,
+      loser: loser.id,
+      winnerPower: winner.power,
+      loserPower: loser.power,
+      duration: `${duration}ms`
+    });
+    
     // Return battle result
     res.json({
       winner: winner,
@@ -165,7 +172,12 @@ router.post('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Battle route error:', error);
+    const duration = Date.now() - startTime;
+    console.error(`[Battle] ${new Date().toISOString()} - Battle failed:`, {
+      error: error.message,
+      stack: error.stack,
+      duration: `${duration}ms`
+    });
     res.status(500).json({ 
       error: 'Battle failed', 
       message: error.message 

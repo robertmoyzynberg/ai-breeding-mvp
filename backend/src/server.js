@@ -71,9 +71,15 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error(`[Error] ${new Date().toISOString()} - Unhandled error:`, {
+    path: req.path,
+    method: req.method,
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
   res.status(err.status || 500).json({ 
-    error: err.message || 'Internal server error' 
+    error: err.message || 'Internal server error',
+    timestamp: new Date().toISOString()
   });
 });
 
